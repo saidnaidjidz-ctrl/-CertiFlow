@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --navy: #102A43;
+    --navy-deep: #0B1D30;
+    --navy-surface: #183B5E;
+    --navy-card: #142F4B;
+    --cyan: #00B8D9;
+    --cyan-hover: #009BB8;
+    --cyan-light: #E8F9FC;
+    --yellow: #FCE445;
+    --yellow-dark: #C99A04;
+    --teal: #35BFA3;
+    --teal-hover: #2AA58C;
+    --teal-light: #EBF8F5;
+    --bg: #F4FBFD;
+    --border-subtle: #E2EFF3;
+    --card-bg: #FFFFFF;
+    --card-border: #E4F0F4;
+    --text-main: #102A43;
+  }
+
+  .dark {
+    --navy: #F1F5F9;
+    --navy-deep: #060B12;
+    --navy-surface: #1A2638;
+    --navy-card: #121D2C;
+    --cyan: #00D4FA;
+    --cyan-hover: #00B8D9;
+    --cyan-light: rgba(0, 212, 250, 0.12);
+    --yellow: #FCE445;
+    --yellow-dark: #E2BA1E;
+    --teal: #3BD8B8;
+    --teal-hover: #35BFA3;
+    --teal-light: rgba(53, 191, 163, 0.12);
+    --bg: #0A111E;
+    --border-subtle: #1C2D44;
+    --card-bg: #101B2B;
+    --card-border: #1B2C42;
+    --text-main: #F1F5F9;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html[dir="rtl"], html[dir="rtl"] body {
+    font-family: 'Cairo', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  input, textarea, select, button {
+    font-family: inherit;
+  }
+}
+
+@layer utilities {
+  .bg-navy { background-color: var(--navy); }
+  .bg-navy-deep { background-color: var(--navy-deep); }
+  .bg-navy-surface { background-color: var(--navy-surface); }
+  .bg-navy-card { background-color: var(--navy-card); }
+  .bg-cyan { background-color: var(--cyan); }
+  .bg-cyan-light { background-color: var(--cyan-light); }
+  .bg-yellow { background-color: var(--yellow); }
+  .bg-teal { background-color: var(--teal); }
+  .bg-teal-light { background-color: var(--teal-light); }
+  .bg-app { background-color: var(--bg); }
+  
+  .text-navy { color: var(--navy); }
+  .text-cyan { color: var(--cyan); }
+  .text-yellow { color: var(--yellow); }
+  .text-teal { color: var(--teal); }
+  
+  .border-cyan { border-color: var(--cyan); }
+  .border-teal { border-color: var(--teal); }
+  .border-navy { border-color: var(--navy); }
+  .border-subtle { border-color: var(--border-subtle); }
+
+  .font-cinzel { font-family: 'Cinzel', serif; }
+  .font-playfair { font-family: 'Playfair Display', Georgia, serif; }
+  .font-sans-main { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+  .font-code { font-family: 'Space Mono', monospace; }
+  .font-amiri { font-family: 'Amiri', 'Traditional Arabic', serif; }
+  .font-cairo { font-family: 'Cairo', 'Segoe UI', sans-serif; }
+
+  /* Premium scrollbars */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 184, 217, 0.4) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 184, 217, 0.35);
+    border-radius: 9999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 184, 217, 0.6);
+  }
+}
+
+/* Subtle focus ring */
+*:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* Drag drop area active */
+.drag-over {
+  border-color: var(--cyan) !important;
+  background-color: rgba(0, 184, 217, 0.06) !important;
+  transform: scale(1.005);
+}
+
+/* Subtle card styling */
+.saas-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 20px -2px rgba(16, 42, 67, 0.04), 0 2px 6px -1px rgba(16, 42, 67, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .saas-card {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+}
+
+.saas-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(16, 42, 67, 0.08), 0 4px 8px -2px rgba(16, 42, 67, 0.03);
+}
+
+.dark .saas-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Glass panel */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}
