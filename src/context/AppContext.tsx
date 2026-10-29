@@ -73,11 +73,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return saved === 'en' ? 'en' : 'ar';
   });
 
-  // Theme state (Day / Night mode)
+  // Theme state (Day / Night mode) — defaults to light
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem('certiflow_theme');
     if (saved === 'dark' || saved === 'light') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   });
 
   useEffect(() => {
