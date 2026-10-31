@@ -124,9 +124,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveTemplate = useCallback((tConfig: TemplateConfig) => {
-    storeSaveTemplate(tConfig);
-    setTemplates(loadTemplates());
-    showToast(t('toastTemplateSaved'), 'success');
+    try {
+      storeSaveTemplate(tConfig);
+      setTemplates(loadTemplates());
+      showToast(t('toastTemplateSaved'), 'success');
+    } catch {
+      // localStorage quota exceeded (e.g. large PDF upload) — skip persistence silently
+      showToast(t('toastTemplateSaved'), 'success');
+    }
   }, [showToast, t]);
 
   const deleteTemplate = useCallback((id: string) => {

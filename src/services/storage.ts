@@ -24,15 +24,37 @@ export function loadTemplates(): TemplateConfig[] {
   }
 }
 
+// Max size for templateImageData stored in localStorage (~1.5 MB in base64)
+const MAX_IMAGE_DATA_BYTES = 1_500_000;
+
+function sanitizeForStorage(tpl: TemplateConfig): TemplateConfig {
+  // Strip large custom image/PDF data to avoid QuotaExceededError.
+  // Preset SVG data-URLs are small (~10 KB) and always kept.
+  // Uploaded images/PDFs can be many MB — we store a placeholder flag instead.
+  if (
+    tpl.templateFileType !== 'preset' &&
+    tpl.templateImageData &&
+    tpl.templateImageData.length > MAX_IMAGE_DATA_BYTES
+  ) {
+    return { ...tpl, templateImageData: '__large_file__' };
+  }
+  return tpl;
+}
+
 export function saveTemplate(tpl: TemplateConfig): void {
   const all = loadTemplates();
+  const toStore = sanitizeForStorage(tpl);
   const idx = all.findIndex(t => t.id === tpl.id);
   if (idx >= 0) {
-    all[idx] = { ...tpl, updatedAt: Date.now() };
+    all[idx] = { ...toStore, updatedAt: Date.now() };
   } else {
-    all.unshift({ ...tpl, createdAt: Date.now(), updatedAt: Date.now() });
+    all.unshift({ ...toStore, createdAt: Date.now(), updatedAt: Date.now() });
   }
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(all));
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(all));
+  } catch {
+    // QuotaExceededError — storage full, skip silently
+  }
 }
 
 export function deleteTemplate(id: string): void {

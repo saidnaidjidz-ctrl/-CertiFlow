@@ -195,8 +195,16 @@ export default function TemplateStep({ initial, onSave }: Props) {
       name: templateName.trim() || 'Custom Certificate Template',
       updatedAt: Date.now(),
     };
-    saveTemplate(finalTpl);
+
+    // Always update the current working template in context
     setCurrentTemplate(finalTpl);
+
+    // Try to persist — but never block navigation if it fails (e.g. localStorage quota)
+    try {
+      saveTemplate(finalTpl);
+    } catch {
+      // Silently ignore save errors; template is still in memory for this session
+    }
 
     if (onSave) {
       onSave(finalTpl);
