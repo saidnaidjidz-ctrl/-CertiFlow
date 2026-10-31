@@ -9,9 +9,11 @@ import {
   Zap,
   ArrowLeft,
   CheckCircle2,
-  Maximize2
+  Maximize2,
+  Sliders
 } from 'lucide-react';
 import PositionEditor from './PositionEditor';
+import type { FontFamily } from '../types';
 
 export default function PreviewStep() {
   const { currentTemplate, setCurrentTemplate, participants, setWizardStep } = useApp();
@@ -118,6 +120,101 @@ export default function PreviewStep() {
               className="bg-[#00B8D9] h-full transition-all duration-200"
               style={{ width: `${((safeIndex + 1) / selected.length) * 100}%` }}
             />
+          </div>
+        </div>
+
+        {/* ── Typography Quick Controls ── */}
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 space-y-4">
+          <span className="text-xs font-bold text-[#102A43] uppercase tracking-wider flex items-center gap-1.5">
+            <Sliders size={14} className="text-[#00B8D9]" />
+            Typography Controls
+          </span>
+
+          {/* Font Family */}
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Font Style</label>
+            <select
+              value={currentTemplate.textStyle.fontFamily}
+              onChange={e =>
+                setCurrentTemplate({
+                  ...currentTemplate,
+                  textStyle: { ...currentTemplate.textStyle, fontFamily: e.target.value as FontFamily },
+                })
+              }
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+            >
+              <option value="Cinzel">Cinzel (Formal Classic)</option>
+              <option value="Playfair">Playfair Display (Serif)</option>
+              <option value="Inter">Plus Jakarta / Inter (Modern)</option>
+              <option value="Amiri">Amiri — أميري (Arabic Traditional)</option>
+              <option value="Cairo">Cairo — القاهرة (Arabic Modern)</option>
+              <option value="SpaceMono">Space Mono (Tech)</option>
+              <option value="Helvetica">Helvetica / Arial</option>
+              <option value="Times-Roman">Times New Roman</option>
+            </select>
+          </div>
+
+          {/* Font Size Slider */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-gray-600">Font Size</label>
+              <span className="text-xs font-bold text-[#00B8D9]">{currentTemplate.textStyle.fontSize} pt</span>
+            </div>
+            <input
+              type="range"
+              min={14}
+              max={90}
+              value={currentTemplate.textStyle.fontSize}
+              onChange={e =>
+                setCurrentTemplate({
+                  ...currentTemplate,
+                  textStyle: { ...currentTemplate.textStyle, fontSize: Number(e.target.value) },
+                })
+              }
+              className="w-full accent-[#00B8D9] cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+              <span>14 pt</span>
+              <span>90 pt</span>
+            </div>
+          </div>
+
+          {/* Text Color */}
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Text Color</label>
+            <div className="flex items-center gap-2">
+              {['#102A43','#00B8D9','#D97706','#0F172A','#35BFA3','#8B5CF6','#BE185D','#ffffff'].map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() =>
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      textStyle: { ...currentTemplate.textStyle, color },
+                    })
+                  }
+                  className={`w-6 h-6 rounded-full border-2 transition-transform flex-shrink-0 ${
+                    currentTemplate.textStyle.color.toLowerCase() === color.toLowerCase()
+                      ? 'ring-2 ring-[#00B8D9] scale-110'
+                      : 'border-gray-200 hover:scale-105'
+                  }`}
+                  style={{ background: color }}
+                  title={color}
+                />
+              ))}
+              <input
+                type="color"
+                value={currentTemplate.textStyle.color}
+                onChange={e =>
+                  setCurrentTemplate({
+                    ...currentTemplate,
+                    textStyle: { ...currentTemplate.textStyle, color: e.target.value },
+                  })
+                }
+                className="w-7 h-7 rounded-lg border border-gray-200 cursor-pointer ml-auto"
+                title="Custom color"
+              />
+            </div>
           </div>
         </div>
 
