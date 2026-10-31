@@ -12,7 +12,8 @@ import {
   Sliders,
   Check,
   Layers,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import type {
   TemplateConfig,
@@ -34,11 +35,11 @@ const DEFAULT_POSITION: NamePosition = {
 };
 
 const SAMPLE_NAMES_TEST = [
+  'فاطمة الزهراء المنصوري',
+  'محمد الأمين بلقاسم',
   'Dr. Alexander Vance-Wright',
   'Sophia Elena Martinez',
-  'Christopher Bartholomew-Montgomery',
-  'فاطمة الزهراء المنصوري',
-  'Maximilian Von Habsburg',
+  'Christopher Bartholomew',
 ];
 
 const PRESET_COLOR_SWATCHES = [
@@ -57,24 +58,27 @@ interface Props {
 }
 
 export default function TemplateStep({ initial, onSave }: Props) {
-  const { setCurrentTemplate, currentTemplate, setWizardStep, saveTemplate } = useApp();
+  const { setCurrentTemplate, currentTemplate, setWizardStep, saveTemplate, language, t } = useApp();
+  const isRtl = language === 'ar';
+  const NextIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const [template, setTemplate] = useState<TemplateConfig>(() => {
     if (initial) return initial;
     if (currentTemplate) return currentTemplate;
-    // Default to the classic-excellence preset
-    const preset = getPresetById('classic-excellence');
+    // Default to arabic-honor preset when Arabic language, otherwise classic-excellence
+    const defaultPresetId = language === 'ar' ? 'arabic-honor' : 'classic-excellence';
+    const preset = getPresetById(defaultPresetId) || getPresetById('classic-excellence');
     return {
       id: crypto.randomUUID(),
-      name: 'Academic Excellence Certificate',
+      name: `${preset.name} Certificate`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       pageSize: 'A4',
-      orientation: 'landscape',
+      orientation: preset.orientation || 'landscape',
       presetId: preset.id,
       templateFileType: 'preset',
       templateImageData: getPresetDataUrl(preset.id),
-      templateFileName: 'classic-excellence.svg',
+      templateFileName: `${preset.id}.svg`,
       namePosition: { ...preset.defaultPosition },
       textStyle: {
         fontFamily: preset.defaultFont,
@@ -140,11 +144,11 @@ export default function TemplateStep({ initial, onSave }: Props) {
     setError('');
     const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
     if (!allowed.includes(file.type)) {
-      setError('Please upload a valid PNG, JPG, or PDF file.');
+      setError(language === 'ar' ? 'يرجى رفع ملف PNG أو JPG أو PDF صالح.' : 'Please upload a valid PNG, JPG, or PDF file.');
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      setError('File size must be under 20 MB.');
+      setError(language === 'ar' ? 'يجب أن يكون حجم الملف أقل من 20 ميغابايت.' : 'File size must be under 20 MB.');
       return;
     }
 
@@ -192,7 +196,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
   function handleNext() {
     const finalTpl: TemplateConfig = {
       ...template,
-      name: templateName.trim() || 'Custom Certificate Template',
+      name: templateName.trim() || (language === 'ar' ? 'قالب شهادة مخصص' : 'Custom Certificate Template'),
       updatedAt: Date.now(),
     };
 
@@ -218,30 +222,30 @@ export default function TemplateStep({ initial, onSave }: Props) {
       {/* LEFT COLUMN: Controls & Settings (5 cols) */}
       <div className="lg:col-span-5 space-y-5">
         {/* Template Source: Presets vs Upload */}
-        <div className="saas-card rounded-2xl p-5 border border-sky-100">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B]">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-bold text-[#102A43] uppercase tracking-wider flex items-center gap-1.5">
+            <label className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Layers size={14} className="text-[#00B8D9]" />
-              Certificate Backdrop
+              {t('backdropSection')}
             </label>
-            <div className="flex bg-gray-100 p-0.5 rounded-lg text-xs font-semibold">
+            <div className="flex bg-gray-100 dark:bg-[#162338] p-0.5 rounded-lg text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveTab('presets')}
                 className={`px-3 py-1 rounded-md transition-colors ${
-                  activeTab === 'presets' ? 'bg-white text-[#102A43] shadow-sm' : 'text-gray-500'
+                  activeTab === 'presets' ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Presets
+                {t('tabPresets')}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('upload')}
                 className={`px-3 py-1 rounded-md transition-colors ${
-                  activeTab === 'upload' ? 'bg-white text-[#102A43] shadow-sm' : 'text-gray-500'
+                  activeTab === 'upload' ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Upload File
+                {t('tabUpload')}
               </button>
             </div>
           </div>
@@ -256,22 +260,22 @@ export default function TemplateStep({ initial, onSave }: Props) {
                       key={p.id}
                       type="button"
                       onClick={() => applyPreset(p.id)}
-                      className={`p-2.5 rounded-xl border text-left transition-all relative ${
+                      className={`p-2.5 rounded-xl border text-start transition-all relative ${
                         isSelected
-                          ? 'border-[#00B8D9] bg-cyan-50/60 ring-2 ring-[#00B8D9]/20'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'border-[#00B8D9] bg-cyan-50/60 dark:bg-cyan-950/30 ring-2 ring-[#00B8D9]/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-[#162338]'
                       }`}
                     >
-                      <div className="h-16 rounded-lg overflow-hidden bg-gray-50 mb-2 border border-gray-100 flex items-center justify-center p-1">
+                      <div className="h-16 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#101B2B] mb-2 border border-gray-100 dark:border-gray-800 flex items-center justify-center p-1">
                         <div
                           className="w-full h-full pointer-events-none transform scale-90"
                           dangerouslySetInnerHTML={{ __html: p.svg }}
                         />
                       </div>
-                      <div className="text-xs font-bold text-[#102A43] truncate">{p.name}</div>
-                      <div className="text-[10px] text-gray-500 capitalize">{p.orientation} • {p.defaultFont}</div>
+                      <div className="text-xs font-bold text-[#102A43] dark:text-white truncate">{p.name}</div>
+                      <div className="text-[10px] text-gray-500 dark:text-gray-400 capitalize">{p.orientation} • {p.defaultFont}</div>
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#00B8D9] text-white flex items-center justify-center text-[10px]">
+                        <div className="absolute top-2 end-2 w-4 h-4 rounded-full bg-[#00B8D9] text-white flex items-center justify-center text-[10px]">
                           <Check size={10} />
                         </div>
                       )}
@@ -284,7 +288,9 @@ export default function TemplateStep({ initial, onSave }: Props) {
             <div>
               <div
                 className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
-                  dragOver ? 'drag-over' : 'border-gray-200 hover:border-[#00B8D9]'
+                  dragOver
+                    ? 'drag-over'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-[#00B8D9] dark:hover:border-[#00B8D9]'
                 }`}
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -305,8 +311,8 @@ export default function TemplateStep({ initial, onSave }: Props) {
                     ) : (
                       <FileImage size={26} className="text-[#00B8D9]" />
                     )}
-                    <div className="text-left min-w-0">
-                      <div className="text-xs font-bold text-[#102A43] truncate max-w-[200px]">
+                    <div className="text-start min-w-0">
+                      <div className="text-xs font-bold text-[#102A43] dark:text-white truncate max-w-[200px]">
                         {template.templateFileName}
                       </div>
                       <div className="text-[11px] text-gray-400 capitalize">{template.templateFileType} format</div>
@@ -315,11 +321,11 @@ export default function TemplateStep({ initial, onSave }: Props) {
                       type="button"
                       onClick={e => {
                         e.stopPropagation();
-                        applyPreset('classic-excellence');
+                        applyPreset(language === 'ar' ? 'arabic-honor' : 'classic-excellence');
                         setActiveTab('presets');
                       }}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 ml-2"
-                      title="Remove custom template"
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-red-400 ms-2"
+                      title={t('restorePresetBtn')}
                     >
                       <RotateCcw size={14} />
                     </button>
@@ -327,13 +333,13 @@ export default function TemplateStep({ initial, onSave }: Props) {
                 ) : (
                   <>
                     <Upload size={26} className="mx-auto mb-2 text-gray-400" />
-                    <p className="text-xs font-semibold text-[#102A43]">Drop custom PNG, JPG, or PDF here</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">High-resolution recommended (Max 20 MB)</p>
+                    <p className="text-xs font-semibold text-[#102A43] dark:text-white">{t('dropTemplateFile')}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{t('dropTemplateSub')}</p>
                   </>
                 )}
               </div>
               {error && (
-                <div className="mt-2 flex items-center gap-2 text-red-500 text-xs">
+                <div className="mt-2 flex items-center gap-2 text-red-500 dark:text-red-400 text-xs">
                   <AlertCircle size={13} />
                   <span>{error}</span>
                 </div>
@@ -343,38 +349,39 @@ export default function TemplateStep({ initial, onSave }: Props) {
         </div>
 
         {/* Template Metadata & Layout Options */}
-        <div className="saas-card rounded-2xl p-5 border border-sky-100 space-y-4">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#102A43] uppercase tracking-wider mb-1.5">
-              Template Batch Name
+            <label className="block text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider mb-1.5">
+              {t('templateNameLabel')}
             </label>
             <input
               type="text"
               value={templateName}
               onChange={e => setTemplateName(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3.5 py-2 text-sm text-[#102A43] font-medium focus:outline-none focus:border-[#00B8D9] transition-colors"
-              placeholder="e.g. Stanford AI Summit 2026 Diploma"
+              className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3.5 py-2 text-sm text-[#102A43] dark:text-white font-medium focus:outline-none focus:border-[#00B8D9] transition-colors"
+              placeholder={language === 'ar' ? 'مثال: شهادة تكريم الهاكاثون الوطني 2026' : 'e.g. Stanford AI Summit 2026 Diploma'}
+              dir="auto"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Orientation</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">{t('orientationLabel')}</label>
               <select
                 value={template.orientation}
                 onChange={e => update('orientation', e.target.value as Orientation)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
               >
-                <option value="landscape">Landscape (Standard)</option>
-                <option value="portrait">Portrait</option>
+                <option value="landscape">{t('orientationLandscape')}</option>
+                <option value="portrait">{t('orientationPortrait')}</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Page Size</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">{t('pageSizeLabel')}</label>
               <select
                 value={template.pageSize}
                 onChange={e => update('pageSize', e.target.value as PageSize)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
               >
                 <option value="A4">A4 (297 × 210 mm)</option>
                 <option value="Letter">US Letter</option>
@@ -385,27 +392,27 @@ export default function TemplateStep({ initial, onSave }: Props) {
         </div>
 
         {/* Typography Controls */}
-        <div className="saas-card rounded-2xl p-5 border border-sky-100 space-y-4">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-4">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-[#102A43] uppercase tracking-wider flex items-center gap-1.5">
+            <label className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Sliders size={14} className="text-[#00B8D9]" />
-              Name Typography & Styling
+              {t('typographyTitle')}
             </label>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Font Family</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">{t('fontFamilyLabel')}</label>
               <select
                 value={template.textStyle.fontFamily}
                 onChange={e => updateStyle('fontFamily', e.target.value as FontFamily)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
               >
+                <option value="Amiri">Amiri (خط عربي كلاسيكي / Traditional Arabic)</option>
+                <option value="Cairo">Cairo (خط عربي حديث / Modern Arabic)</option>
                 <option value="Cinzel">Cinzel (Formal Classic)</option>
                 <option value="Playfair">Playfair Display (Serif)</option>
                 <option value="Inter">Plus Jakarta / Inter (Modern)</option>
-                <option value="Amiri">Amiri (خط عربي كلاسيكي / Traditional Arabic)</option>
-                <option value="Cairo">Cairo (خط عربي حديث / Modern Arabic)</option>
                 <option value="SpaceMono">Space Mono (Tech / Code)</option>
                 <option value="Helvetica">Helvetica / Arial</option>
                 <option value="Times-Roman">Times New Roman</option>
@@ -414,8 +421,8 @@ export default function TemplateStep({ initial, onSave }: Props) {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-gray-600">Font Size (pt)</label>
-                <span className="text-xs font-bold text-[#00B8D9]">{template.textStyle.fontSize} pt</span>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('fontSizeLabel')}</label>
+                <span className="text-xs font-bold text-[#00B8D9] font-mono">{template.textStyle.fontSize} pt</span>
               </div>
               <input
                 type="range"
@@ -430,7 +437,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
 
           {/* Color Picker with Swatches */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Text Color</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 block">{t('textColorLabel')}</label>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 {PRESET_COLOR_SWATCHES.map(color => (
@@ -441,7 +448,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
                     className={`w-6 h-6 rounded-full border transition-transform ${
                       template.textStyle.color.toLowerCase() === color.toLowerCase()
                         ? 'ring-2 ring-[#00B8D9] scale-110'
-                        : 'border-gray-200 hover:scale-105'
+                        : 'border-gray-200 dark:border-gray-700 hover:scale-105'
                     }`}
                     style={{ background: color }}
                     title={color}
@@ -452,26 +459,26 @@ export default function TemplateStep({ initial, onSave }: Props) {
                 type="color"
                 value={template.textStyle.color}
                 onChange={e => updateStyle('color', e.target.value)}
-                className="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer ml-auto"
+                className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer ms-auto"
                 title="Choose custom color"
               />
               <input
                 type="text"
                 value={template.textStyle.color}
                 onChange={e => updateStyle('color', e.target.value)}
-                className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono text-center uppercase"
+                className="w-20 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-lg px-2 py-1 text-xs font-mono text-center uppercase text-[#102A43] dark:text-white"
               />
             </div>
           </div>
 
           {/* Alignment Selector */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Alignment</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 block">{t('textAlignLabel')}</label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { align: 'left', icon: <AlignLeft size={14} />, label: 'Left' },
-                { align: 'center', icon: <AlignCenter size={14} />, label: 'Center' },
-                { align: 'right', icon: <AlignRight size={14} />, label: 'Right' },
+                { align: 'left', icon: <AlignLeft size={14} />, label: t('alignLeft') },
+                { align: 'center', icon: <AlignCenter size={14} />, label: t('alignCenter') },
+                { align: 'right', icon: <AlignRight size={14} />, label: t('alignRight') },
               ].map(({ align, icon, label }) => {
                 const isSelected = template.textStyle.align === align;
                 return (
@@ -482,7 +489,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
                     className={`py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all ${
                       isSelected
                         ? 'bg-[#00B8D9] text-white border-[#00B8D9] shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                        : 'bg-white dark:bg-[#162338] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#1E304C]'
                     }`}
                   >
                     {icon}
@@ -494,10 +501,10 @@ export default function TemplateStep({ initial, onSave }: Props) {
           </div>
 
           {/* Auto-shrink constraint */}
-          <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+          <div className="pt-2 border-t border-gray-100 dark:border-[#1B2C42] flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold text-[#102A43] block">Auto-shrink Long Names</span>
-              <span className="text-[11px] text-gray-400">Scale down oversized names to prevent text overflow</span>
+              <span className="text-xs font-semibold text-[#102A43] dark:text-white block">{t('autoShrinkLabel')}</span>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500">{t('autoShrinkSub')}</span>
             </div>
             <input
               type="checkbox"
@@ -509,33 +516,33 @@ export default function TemplateStep({ initial, onSave }: Props) {
         </div>
 
         {/* Position Precision Coordinates & Center Helper */}
-        <div className="saas-card rounded-2xl p-5 border border-sky-100 space-y-3">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-[#102A43] uppercase tracking-wider">
-              Exact Box Coordinates (%)
+            <label className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider">
+              {t('quickAlignTitle')}
             </label>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleCenterHorizontally}
-                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-[11px] font-semibold text-gray-600 transition-colors"
-                title="Center horizontally on page"
+                className="px-2 py-1 rounded bg-gray-100 dark:bg-[#162338] hover:bg-gray-200 dark:hover:bg-[#1E304C] text-[11px] font-semibold text-gray-600 dark:text-gray-300 transition-colors"
+                title={t('centerHBtn')}
               >
-                Center H
+                {t('centerHBtn')}
               </button>
               <button
                 type="button"
                 onClick={handleCenterVertically}
-                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-[11px] font-semibold text-gray-600 transition-colors"
-                title="Center vertically on page"
+                className="px-2 py-1 rounded bg-gray-100 dark:bg-[#162338] hover:bg-gray-200 dark:hover:bg-[#1E304C] text-[11px] font-semibold text-gray-600 dark:text-gray-300 transition-colors"
+                title={t('centerVBtn')}
               >
-                Center V
+                {t('centerVBtn')}
               </button>
               <button
                 type="button"
                 onClick={handleResetPosition}
-                className="p-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors"
-                title="Reset position"
+                className="p-1 rounded bg-gray-100 dark:bg-[#162338] hover:bg-gray-200 dark:hover:bg-[#1E304C] text-gray-500 dark:text-gray-400 transition-colors"
+                title={t('resetPosBtn')}
               >
                 <RotateCcw size={12} />
               </button>
@@ -544,36 +551,36 @@ export default function TemplateStep({ initial, onSave }: Props) {
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <span className="text-[10px] text-gray-400 block mb-0.5">X Offset</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 block mb-0.5">X Offset</span>
               <input
                 type="number"
                 min={0}
                 max={90}
                 value={Math.round(template.namePosition.x)}
                 onChange={e => updatePosition({ ...template.namePosition, x: Number(e.target.value) })}
-                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-[#102A43] dark:text-white rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-gray-400 block mb-0.5">Y Offset</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 block mb-0.5">Y Offset</span>
               <input
                 type="number"
                 min={0}
                 max={90}
                 value={Math.round(template.namePosition.y)}
                 onChange={e => updatePosition({ ...template.namePosition, y: Number(e.target.value) })}
-                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-[#102A43] dark:text-white rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-gray-400 block mb-0.5">Width</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 block mb-0.5">Width</span>
               <input
                 type="number"
                 min={10}
                 max={100}
                 value={Math.round(template.namePosition.width)}
                 onChange={e => updatePosition({ ...template.namePosition, width: Number(e.target.value) })}
-                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-[#102A43] dark:text-white rounded-lg px-2 py-1.5 text-xs font-mono text-center font-bold"
               />
             </div>
           </div>
@@ -582,25 +589,27 @@ export default function TemplateStep({ initial, onSave }: Props) {
 
       {/* RIGHT COLUMN: Live Interactive Studio Canvas (7 cols) */}
       <div className="lg:col-span-7 space-y-4 flex flex-col justify-between">
-        <div className="saas-card rounded-2xl p-5 border border-sky-100 flex-1 flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] flex-1 flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-[#1B2C42]">
             <div>
-              <h3 className="font-bold text-sm text-[#102A43] flex items-center gap-2">
+              <h3 className="font-bold text-sm text-[#102A43] dark:text-white flex items-center gap-2">
                 <Sparkles size={16} className="text-[#00B8D9]" />
-                Live Certificate Studio
+                {language === 'ar' ? 'استوديو المعاينة التفاعلي' : 'Live Certificate Studio'}
               </h3>
-              <p className="text-xs text-gray-500">
-                Drag the name placeholder directly on the certificate to position it perfectly.
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t('interactiveStudioNote')}
               </p>
             </div>
 
             {/* Test Sample Name Switcher */}
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Test with:</span>
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {language === 'ar' ? 'تجربة باسم:' : 'Test with:'}
+              </span>
               <select
                 value={sampleName}
                 onChange={e => setSampleName(e.target.value)}
-                className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+                className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-[#102A43] dark:text-white rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#00B8D9]"
               >
                 {SAMPLE_NAMES_TEST.map(name => (
                   <option key={name} value={name}>{name}</option>
@@ -627,8 +636,8 @@ export default function TemplateStep({ initial, onSave }: Props) {
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-white font-bold text-sm shadow-lg hover:shadow-cyan-500/20 hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2"
             style={{ background: 'linear-gradient(135deg, #00B8D9 0%, #009BB8 100%)' }}
           >
-            <span>Save & Continue to Participants</span>
-            <ArrowRight size={16} />
+            <span>{t('saveTemplateBtn')}</span>
+            <NextIcon size={16} />
           </button>
         </div>
       </div>

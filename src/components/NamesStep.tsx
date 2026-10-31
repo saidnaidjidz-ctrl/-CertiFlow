@@ -27,7 +27,10 @@ import type { ExcelPreview } from '../services/fileParser';
 import { useApp } from '../context/AppContext';
 
 export default function NamesStep() {
-  const { participants, setParticipants, setWizardStep, showToast } = useApp();
+  const { participants, setParticipants, setWizardStep, showToast, language, t } = useApp();
+  const isRtl = language === 'ar';
+  const BackIcon = isRtl ? ArrowRight : ArrowLeft;
+  const NextIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const [inputTab, setInputTab] = useState<'paste' | 'excel'>('paste');
   const [textInput, setTextInput] = useState('');
@@ -58,7 +61,7 @@ export default function NamesStep() {
 
     setParticipants([...participants, ...enriched]);
     setTextInput('');
-    showToast(`Added ${parsed.length} participants`, 'success');
+    showToast(t('toastAddedCount', { count: parsed.length }), 'success');
   }
 
   function handleLoadSampleList() {
@@ -69,13 +72,13 @@ export default function NamesStep() {
       isDuplicate: p.isDuplicate || existingNames.has(p.name.trim().toLowerCase())
     }));
     setParticipants([...participants, ...enriched]);
-    showToast(`Loaded ${parsed.length} sample participants`, 'info');
+    showToast(t('toastLoadedSample', { count: parsed.length }), 'info');
   }
 
   async function handleExcelFile(file: File) {
     setError('');
     if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
-      setError('Please upload a valid Excel (.xlsx, .xls) or CSV file.');
+      setError(language === 'ar' ? 'يرجى رفع ملف Excel (.xlsx, .xls) أو CSV صالح.' : 'Please upload a valid Excel (.xlsx, .xls) or CSV file.');
       return;
     }
     try {
@@ -85,9 +88,9 @@ export default function NamesStep() {
       setExcelPreview(preview);
       setSelectedColumn(0);
       setSelectedSheet(0);
-      showToast(`Loaded "${file.name}" with ${preview.rows.length} rows`, 'info');
+      showToast(language === 'ar' ? `تم تحميل "${file.name}" مع ${preview.rows.length} صفاً` : `Loaded "${file.name}" with ${preview.rows.length} rows`, 'info');
     } catch {
-      setError('Failed to parse file. Please verify the format or try a CSV.');
+      setError(language === 'ar' ? 'فشل تحليل الملف. يرجى التحقق من التنسيق أو تجربة CSV.' : 'Failed to parse file. Please verify the format or try a CSV.');
     }
   }
 
@@ -99,7 +102,7 @@ export default function NamesStep() {
         const preview = parseExcelFile(excelBuffer, sheetIdx);
         setExcelPreview(preview);
       } catch {
-        setError('Failed to switch worksheet.');
+        setError(language === 'ar' ? 'فشل تبديل ورقة العمل.' : 'Failed to switch worksheet.');
       }
     }
   }
@@ -108,7 +111,7 @@ export default function NamesStep() {
     if (!excelBuffer || !excelPreview) return;
     const parsed = extractParticipantsFromExcel(excelPreview, excelBuffer, selectedSheet, selectedColumn);
     if (parsed.length === 0) {
-      setError('No names found in the selected column.');
+      setError(language === 'ar' ? 'لم يتم العثور على أي أسماء في العمود المحدد.' : 'No names found in the selected column.');
       return;
     }
 
@@ -121,7 +124,7 @@ export default function NamesStep() {
     setParticipants([...participants, ...enriched]);
     setExcelPreview(null);
     setExcelBuffer(null);
-    showToast(`Imported ${parsed.length} participants from Excel`, 'success');
+    showToast(language === 'ar' ? `تم استيراد ${parsed.length} مشارك من Excel` : `Imported ${parsed.length} participants from Excel`, 'success');
   }
 
   function onDrop(e: React.DragEvent) {
@@ -148,7 +151,7 @@ export default function NamesStep() {
     if (!editValue.trim()) return;
     setParticipants(participants.map(p => (p.id === id ? { ...p, name: editValue.trim() } : p)));
     setEditingId(null);
-    showToast('Name updated', 'success');
+    showToast(t('toastNameUpdated'), 'success');
   }
 
   function selectAll(v: boolean) {
@@ -165,7 +168,7 @@ export default function NamesStep() {
     });
     const removedCount = participants.length - filtered.length;
     setParticipants(filtered.map(p => ({ ...p, isDuplicate: false })));
-    showToast(`Removed ${removedCount} duplicate entries`, 'success');
+    showToast(t('toastRemovedDuplicates', { count: removedCount }), 'success');
   }
 
   function handleAddSingleName() {
@@ -178,7 +181,7 @@ export default function NamesStep() {
     };
     setParticipants([newP, ...participants]);
     setNewSingleName('');
-    showToast(`Added "${newP.name}"`, 'success');
+    showToast(language === 'ar' ? `تمت إضافة "${newP.name}"` : `Added "${newP.name}"`, 'success');
   }
 
   const selected = participants.filter(p => p.selected);
@@ -193,31 +196,31 @@ export default function NamesStep() {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* LEFT COLUMN: Input Methods (Paste or Excel) - 5 cols */}
       <div className="lg:col-span-5 space-y-5">
-        <div className="saas-card rounded-2xl p-5 border border-sky-100">
+        <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B]">
           {/* Segmented Header */}
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-            <h3 className="text-xs font-bold text-[#102A43] uppercase tracking-wider flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-[#1B2C42]">
+            <h3 className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Users size={15} className="text-[#00B8D9]" />
-              Import Participants
+              {t('importParticipantsTitle')}
             </h3>
-            <div className="flex bg-gray-100 p-0.5 rounded-lg text-xs font-semibold">
+            <div className="flex bg-gray-100 dark:bg-[#162338] p-0.5 rounded-lg text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setInputTab('paste')}
                 className={`px-3 py-1 rounded-md transition-colors ${
-                  inputTab === 'paste' ? 'bg-white text-[#102A43] shadow-sm' : 'text-gray-500'
+                  inputTab === 'paste' ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Paste Text
+                {t('tabPaste')}
               </button>
               <button
                 type="button"
                 onClick={() => setInputTab('excel')}
                 className={`px-3 py-1 rounded-md transition-colors ${
-                  inputTab === 'excel' ? 'bg-white text-[#102A43] shadow-sm' : 'text-gray-500'
+                  inputTab === 'excel' ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Excel / CSV
+                {t('tabExcel')}
               </button>
             </div>
           </div>
@@ -225,8 +228,8 @@ export default function NamesStep() {
           {inputTab === 'paste' ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-gray-600">
-                  Enter or paste names (one per line)
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                  {t('pasteLabel')}
                 </label>
                 <button
                   type="button"
@@ -234,22 +237,22 @@ export default function NamesStep() {
                   className="text-xs font-bold text-[#00B8D9] hover:underline flex items-center gap-1"
                 >
                   <Sparkles size={12} />
-                  Load 15 Sample Names
+                  {t('loadSampleNamesBtn')}
                 </button>
               </div>
 
               <textarea
                 value={textInput}
                 onChange={e => setTextInput(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm text-[#102A43] font-medium resize-none focus:outline-none focus:border-[#00B8D9] transition-colors scrollbar-thin"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3.5 py-3 text-sm text-[#102A43] dark:text-white font-medium resize-none focus:outline-none focus:border-[#00B8D9] transition-colors scrollbar-thin"
                 rows={9}
-                placeholder={"Dr. Arthur Vance\nSophia Martinez\nLiam O'Connor\nفاطمة الزهراء المنصوري\nChristopher Bartholomew"}
+                placeholder={t('pastePlaceholder')}
                 dir="auto"
               />
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">
-                  {textInput.split('\n').filter(l => l.trim().length > 0).length} names detected
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {t('namesDetected', { count: textInput.split('\n').filter(l => l.trim().length > 0).length })}
                 </span>
                 <button
                   type="button"
@@ -258,7 +261,7 @@ export default function NamesStep() {
                   className="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow disabled:opacity-40 hover:opacity-90 transition-opacity"
                   style={{ background: '#00B8D9' }}
                 >
-                  Add Names to List
+                  {t('addNamesToListBtn')}
                 </button>
               </div>
             </div>
@@ -266,7 +269,9 @@ export default function NamesStep() {
             <div className="space-y-4">
               <div
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                  dragOver ? 'drag-over' : 'border-gray-200 hover:border-[#00B8D9]'
+                  dragOver
+                    ? 'drag-over'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-[#00B8D9] dark:hover:border-[#00B8D9]'
                 }`}
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -281,24 +286,24 @@ export default function NamesStep() {
                   onChange={e => e.target.files?.[0] && handleExcelFile(e.target.files[0])}
                 />
                 <FileSpreadsheet size={32} className="mx-auto mb-2 text-[#00B8D9]" />
-                <p className="text-xs font-bold text-[#102A43]">Drop Excel spreadsheet or CSV here</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Supports .xlsx, .xls, and .csv files</p>
+                <p className="text-xs font-bold text-[#102A43] dark:text-white">{t('dropExcelHere')}</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{t('dropExcelSub')}</p>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">Need a template format?</span>
+                <span className="text-gray-400 dark:text-gray-500">{t('needSampleFormat')}</span>
                 <button
                   type="button"
                   onClick={downloadSampleCsv}
                   className="font-bold text-[#00B8D9] hover:underline flex items-center gap-1"
                 >
                   <Download size={12} />
-                  Download Sample CSV
+                  {t('downloadSampleCsvBtn')}
                 </button>
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-red-500 text-xs p-2.5 rounded-xl bg-red-50">
+                <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-xs p-2.5 rounded-xl bg-red-50 dark:bg-red-950/30">
                   <AlertCircle size={14} />
                   <span>{error}</span>
                 </div>
@@ -306,19 +311,19 @@ export default function NamesStep() {
 
               {/* Excel Preview & Column Mapper */}
               {excelPreview && (
-                <div className="space-y-3 pt-3 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#102A43]">
-                    <span>Map Spreadsheet Columns</span>
-                    <span className="text-gray-400">{excelPreview.rows.length} total rows</span>
+                <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-[#1B2C42]">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#102A43] dark:text-white">
+                    <span>{t('mapColumnsTitle')}</span>
+                    <span className="text-gray-400 dark:text-gray-500">{t('totalRowsLabel', { count: excelPreview.rows.length })}</span>
                   </div>
 
                   {excelPreview.sheetNames.length > 1 && (
                     <div>
-                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Worksheet</label>
+                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">{t('worksheetLabel')}</label>
                       <select
                         value={selectedSheet}
                         onChange={e => handleSheetChange(Number(e.target.value))}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                        className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-lg px-3 py-1.5 text-xs font-semibold text-[#102A43] dark:text-white"
                       >
                         {excelPreview.sheetNames.map((name, i) => (
                           <option key={i} value={i}>{name}</option>
@@ -328,32 +333,32 @@ export default function NamesStep() {
                   )}
 
                   <div>
-                    <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                      Select Participant Name Column:
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
+                      {t('selectNameColLabel')}
                     </label>
                     <select
                       value={selectedColumn}
                       onChange={e => setSelectedColumn(Number(e.target.value))}
-                      className="w-full border border-[#00B8D9] rounded-xl px-3 py-2 text-xs font-bold text-[#102A43] bg-cyan-50/50"
+                      className="w-full border border-[#00B8D9] rounded-xl px-3 py-2 text-xs font-bold text-[#102A43] dark:text-white bg-cyan-50/50 dark:bg-cyan-950/30"
                     >
                       {excelPreview.headers.map((h, i) => (
                         <option key={i} value={i}>
-                          Column {i + 1}: {h}
+                          {t('columnPrefix', { num: i + 1, name: h })}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   {/* Micro Table Preview */}
-                  <div className="border border-gray-200 rounded-xl overflow-x-auto max-h-48 overflow-y-auto scrollbar-thin">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto max-h-48 overflow-y-auto scrollbar-thin">
                     <table className="w-full text-[11px] whitespace-nowrap">
                       <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
+                        <tr className="bg-gray-50 dark:bg-[#162338] border-b border-gray-200 dark:border-gray-700">
                           {excelPreview.headers.map((h, i) => (
                             <th
                               key={i}
-                              className={`px-3 py-1.5 text-left font-bold ${
-                                i === selectedColumn ? 'text-[#00B8D9] bg-cyan-50' : 'text-gray-500'
+                              className={`px-3 py-1.5 text-start font-bold ${
+                                i === selectedColumn ? 'text-[#00B8D9] bg-cyan-50 dark:bg-cyan-950/40' : 'text-gray-500 dark:text-gray-400'
                               }`}
                             >
                               {h}
@@ -363,12 +368,12 @@ export default function NamesStep() {
                       </thead>
                       <tbody>
                         {excelPreview.rows.slice(0, 5).map((row, ri) => (
-                          <tr key={ri} className="border-b border-gray-100">
+                          <tr key={ri} className="border-b border-gray-100 dark:border-[#1B2C42]">
                             {excelPreview.headers.map((_, ci) => (
                               <td
                                 key={ci}
                                 className={`px-3 py-1.5 truncate max-w-[160px] ${
-                                  ci === selectedColumn ? 'font-bold text-[#102A43] bg-cyan-50/40' : 'text-gray-500'
+                                  ci === selectedColumn ? 'font-bold text-[#102A43] dark:text-white bg-cyan-50/40 dark:bg-cyan-950/20' : 'text-gray-500 dark:text-gray-400'
                                 }`}
                               >
                                 {row[ci] || '—'}
@@ -386,7 +391,7 @@ export default function NamesStep() {
                     className="w-full py-2.5 rounded-xl text-white text-xs font-bold shadow hover:opacity-90 transition-opacity"
                     style={{ background: '#35BFA3' }}
                   >
-                    Confirm & Import Participants
+                    {t('confirmImportExcelBtn')}
                   </button>
                 </div>
               )}
@@ -395,9 +400,9 @@ export default function NamesStep() {
         </div>
 
         {/* Quick Add Single Participant Form */}
-        <div className="saas-card rounded-2xl p-4 border border-sky-100">
-          <label className="text-xs font-bold text-[#102A43] uppercase tracking-wider mb-2 block">
-            Add Individual Participant
+        <div className="saas-card rounded-2xl p-4 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B]">
+          <label className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider mb-2 block">
+            {t('addSingleParticipantTitle')}
           </label>
           <div className="flex items-center gap-2">
             <input
@@ -405,8 +410,8 @@ export default function NamesStep() {
               value={newSingleName}
               onChange={e => setNewSingleName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAddSingleName(); }}
-              placeholder="e.g. Dr. Hina Takahashi"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-[#102A43] focus:outline-none focus:border-[#00B8D9]"
+              placeholder={t('addSinglePlaceholder')}
+              className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-medium text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
               dir="auto"
             />
             <button
@@ -416,7 +421,7 @@ export default function NamesStep() {
               className="px-3 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-40 transition-opacity flex items-center gap-1 flex-shrink-0"
               style={{ background: '#00B8D9' }}
             >
-              <Plus size={14} /> Add
+              <Plus size={14} /> {t('addBtn')}
             </button>
           </div>
         </div>
@@ -424,13 +429,13 @@ export default function NamesStep() {
 
       {/* RIGHT COLUMN: Participant Data Table (7 cols) */}
       <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-        <div className="saas-card rounded-2xl border border-sky-100 flex-1 flex flex-col overflow-hidden min-h-[500px]">
+        <div className="saas-card rounded-2xl border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] flex-1 flex flex-col overflow-hidden min-h-[500px]">
           {/* Header Bar */}
-          <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-[#1B2C42] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-[#102A43]">Participant Records</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-[#00B8D9] border border-cyan-100">
-                {selected.length} / {participants.length} Selected
+              <span className="font-bold text-sm text-[#102A43] dark:text-white">{t('participantRecordsTitle')}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 text-[#00B8D9] border border-cyan-100 dark:border-cyan-800">
+                {t('selectedOfTotalPill', { selected: selected.length, total: participants.length })}
               </span>
             </div>
 
@@ -439,24 +444,24 @@ export default function NamesStep() {
                 <button
                   type="button"
                   onClick={removeDuplicates}
-                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition-colors"
                 >
-                  Remove {dupes.length} Duplicates
+                  {t('removeDuplicatesBtn', { count: dupes.length })}
                 </button>
               )}
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                <button type="button" onClick={() => selectAll(true)} className="hover:text-[#00B8D9]">All</button>
-                <span className="text-gray-300">|</span>
-                <button type="button" onClick={() => selectAll(false)} className="hover:text-[#00B8D9]">None</button>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                <button type="button" onClick={() => selectAll(true)} className="hover:text-[#00B8D9]">{t('selectAllBtn')}</button>
+                <span className="text-gray-300 dark:text-gray-600">|</span>
+                <button type="button" onClick={() => selectAll(false)} className="hover:text-[#00B8D9]">{t('selectNoneBtn')}</button>
                 {participants.length > 0 && (
                   <>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-gray-300 dark:text-gray-600">|</span>
                     <button
                       type="button"
                       onClick={() => setParticipants([])}
                       className="text-red-400 hover:text-red-600"
                     >
-                      Clear
+                      {t('clearAllBtn')}
                     </button>
                   </>
                 )}
@@ -466,37 +471,38 @@ export default function NamesStep() {
 
           {/* Search bar */}
           {participants.length > 0 && (
-            <div className="px-5 py-2.5 bg-gray-50/50 border-b border-gray-100 flex items-center gap-2">
+            <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#162338]/50 border-b border-gray-100 dark:border-[#1B2C42] flex items-center gap-2">
               <Search size={14} className="text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search participant names..."
-                className="bg-transparent border-none text-xs text-[#102A43] placeholder-gray-400 focus:outline-none w-full"
+                placeholder={t('searchParticipantsPlaceholder')}
+                className="bg-transparent border-none text-xs text-[#102A43] dark:text-white placeholder-gray-400 focus:outline-none w-full"
+                dir="auto"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
-                  Clear
+                  {t('clearAllBtn')}
                 </button>
               )}
             </div>
           )}
 
           {/* Table / List */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin px-3 py-2 divide-y divide-gray-100 max-h-[480px]">
+          <div className="flex-1 overflow-y-auto scrollbar-thin px-3 py-2 divide-y divide-gray-100 dark:divide-[#1B2C42] max-h-[480px]">
             {participants.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-16 px-4">
-                <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-[#00B8D9] mb-3">
+                <div className="w-16 h-16 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-[#00B8D9] mb-3">
                   <Upload size={28} />
                 </div>
-                <h4 className="font-bold text-sm text-[#102A43]">No participants imported</h4>
-                <p className="text-xs text-gray-400 max-w-xs mt-1 mb-4">
-                  Paste a list of names or upload an Excel spreadsheet on the left to populate the certificates.
+                <h4 className="font-bold text-sm text-[#102A43] dark:text-white">{t('noParticipantsImported')}</h4>
+                <p className="text-xs text-gray-400 dark:text-gray-500 max-w-xs mt-1 mb-4">
+                  {t('noParticipantsDesc')}
                 </p>
                 <button
                   type="button"
@@ -505,12 +511,12 @@ export default function NamesStep() {
                   style={{ background: '#00B8D9' }}
                 >
                   <Sparkles size={13} />
-                  Load Sample List (15 Names)
+                  {t('loadSampleNamesBtn')}
                 </button>
               </div>
             ) : displayedParticipants.length === 0 ? (
-              <div className="text-center py-12 text-xs text-gray-400">
-                No participants match "{searchQuery}"
+              <div className="text-center py-12 text-xs text-gray-400 dark:text-gray-500">
+                {t('noSearchMatches', { query: searchQuery })}
               </div>
             ) : (
               displayedParticipants.map((p, idx) => (
@@ -518,9 +524,9 @@ export default function NamesStep() {
                   key={p.id}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl group transition-colors ${
                     p.selected ? '' : 'opacity-40'
-                  } ${p.isDuplicate ? 'bg-amber-50/60' : 'hover:bg-gray-50'}`}
+                  } ${p.isDuplicate ? 'bg-amber-50/60 dark:bg-amber-950/20' : 'hover:bg-gray-50 dark:hover:bg-[#162338]'}`}
                 >
-                  <span className="text-[11px] font-mono text-gray-300 w-6 text-right flex-shrink-0">
+                  <span className="text-[11px] font-mono text-gray-300 dark:text-gray-600 w-6 text-end flex-shrink-0">
                     {idx + 1}
                   </span>
 
@@ -542,13 +548,13 @@ export default function NamesStep() {
                           if (e.key === 'Escape') setEditingId(null);
                         }}
                         autoFocus
-                        className="flex-1 border border-[#00B8D9] rounded-lg px-2.5 py-1 text-xs font-semibold text-[#102A43] focus:outline-none"
+                        className="flex-1 border border-[#00B8D9] bg-white dark:bg-[#162338] rounded-lg px-2.5 py-1 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none"
                         dir="auto"
                       />
                       <button
                         type="button"
                         onClick={() => confirmEdit(p.id)}
-                        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                        className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded"
                         title="Save edit"
                       >
                         <Check size={14} />
@@ -556,7 +562,7 @@ export default function NamesStep() {
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                        className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-[#162338] rounded"
                         title="Cancel"
                       >
                         <X size={14} />
@@ -564,12 +570,12 @@ export default function NamesStep() {
                     </div>
                   ) : (
                     <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="text-xs font-semibold text-[#102A43] truncate" dir="auto">
+                      <span className="text-xs font-semibold text-[#102A43] dark:text-white truncate" dir="auto">
                         {p.name}
                       </span>
                       {p.isDuplicate && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 flex-shrink-0">
-                          Duplicate
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 flex-shrink-0">
+                          {t('duplicateBadge')}
                         </span>
                       )}
                     </div>
@@ -580,7 +586,7 @@ export default function NamesStep() {
                       <button
                         type="button"
                         onClick={() => startEdit(p)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B8D9] hover:bg-cyan-50"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B8D9] hover:bg-cyan-50 dark:hover:bg-cyan-950/30"
                         title="Edit name"
                       >
                         <Edit2 size={13} />
@@ -588,7 +594,7 @@ export default function NamesStep() {
                       <button
                         type="button"
                         onClick={() => removeParticipant(p.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                         title="Remove participant"
                       >
                         <Trash2 size={13} />
@@ -606,10 +612,10 @@ export default function NamesStep() {
           <button
             type="button"
             onClick={() => setWizardStep('template')}
-            className="px-5 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-5 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#101B2B] text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#162338] transition-colors flex items-center gap-2"
           >
-            <ArrowLeft size={15} />
-            <span>Back to Template</span>
+            <BackIcon size={15} />
+            <span>{t('backToTemplateBtn')}</span>
           </button>
 
           <button
@@ -619,8 +625,8 @@ export default function NamesStep() {
             className="px-8 py-3.5 rounded-2xl text-white text-xs font-bold shadow-lg hover:shadow-cyan-500/20 disabled:opacity-40 hover:opacity-95 transition-all flex items-center gap-2"
             style={{ background: 'linear-gradient(135deg, #00B8D9 0%, #009BB8 100%)' }}
           >
-            <span>Proceed to Preview ({selected.length})</span>
-            <ArrowRight size={15} />
+            <span>{t('proceedToPreviewBtn', { count: selected.length })}</span>
+            <NextIcon size={15} />
           </button>
         </div>
       </div>

@@ -186,12 +186,12 @@ export default function PositionEditor({
   return (
     <div className="flex flex-col items-center select-none w-full">
       {/* Canvas Toolset Bar */}
-      <div className="w-full max-w-[620px] mb-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
-        <div className="flex items-center gap-2 text-gray-500 font-medium">
+      <div className="w-full max-w-[620px] mb-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-[#162338] border border-gray-200 dark:border-gray-700 text-xs">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
           <Move size={14} className="text-[#00B8D9]" />
           <span>Interactive Studio Preview</span>
-          <span className="text-gray-300">•</span>
-          <span className="font-mono text-gray-400">
+          <span className="text-gray-300 dark:text-gray-600">•</span>
+          <span className="font-mono text-gray-400 dark:text-gray-400">
             X: {Math.round(pos.x)}% | Y: {Math.round(pos.y)}% | W: {Math.round(pos.width)}%
           </span>
         </div>
@@ -199,24 +199,24 @@ export default function PositionEditor({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setZoomLevel(prev => Math.max(0.7, prev - 0.1))}
-            className="p-1 rounded hover:bg-gray-200 text-gray-600 transition-colors"
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-[#1E304C] text-gray-600 dark:text-gray-300 transition-colors"
             title="Zoom Out"
           >
             <ZoomOut size={14} />
           </button>
-          <span className="font-mono text-[11px] text-gray-500 w-9 text-center">
+          <span className="font-mono text-[11px] text-gray-500 dark:text-gray-400 w-9 text-center">
             {Math.round(zoomLevel * 100)}%
           </span>
           <button
             onClick={() => setZoomLevel(prev => Math.min(1.4, prev + 0.1))}
-            className="p-1 rounded hover:bg-gray-200 text-gray-600 transition-colors"
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-[#1E304C] text-gray-600 dark:text-gray-300 transition-colors"
             title="Zoom In"
           >
             <ZoomIn size={14} />
           </button>
           <button
             onClick={() => setZoomLevel(1)}
-            className="p-1 rounded hover:bg-gray-200 text-gray-600 transition-colors ml-1"
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-[#1E304C] text-gray-600 dark:text-gray-300 transition-colors ml-1"
             title="Reset Zoom"
           >
             <RotateCcw size={13} />
@@ -228,7 +228,7 @@ export default function PositionEditor({
       <div className="w-full flex justify-center overflow-x-auto p-2 scrollbar-thin">
         <div
           ref={containerRef}
-          className="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-md transition-shadow group/canvas"
+          className="relative overflow-hidden rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white shadow-md transition-shadow group/canvas"
           style={{
             width: BASE_WIDTH * zoomLevel,
             height: BASE_HEIGHT * zoomLevel,

@@ -41,6 +41,8 @@ export default function GenerateStep() {
     setView,
     resetWizard,
     showToast,
+    language,
+    t,
   } = useApp();
 
   const [started, setStarted] = useState(false);
@@ -93,7 +95,7 @@ export default function GenerateStep() {
       status: 'completed',
     });
 
-    showToast(`Successfully generated ${successCount} certificates!`, 'success');
+    showToast(t('toastBatchSuccess', { count: successCount }), 'success');
   }
 
   // Auto-start generation when arriving on this step if not started yet
@@ -107,26 +109,26 @@ export default function GenerateStep() {
 
   async function handleDownloadZip() {
     setBuildingZip(true);
-    showToast('Compressing certificates into ZIP archive…', 'info');
+    showToast(t('toastZipBuilding'), 'info');
     try {
       const blob = await buildZip(results);
       downloadBlob(blob, `${currentTemplate?.name.replace(/\s+/g, '_') || 'CertiFlow'}_Certificates.zip`);
-      showToast('ZIP archive downloaded successfully', 'success');
+      showToast(t('toastZipSuccess'), 'success');
     } catch {
-      showToast('Failed to create ZIP package', 'error');
+      showToast(t('toastZipError'), 'error');
     }
     setBuildingZip(false);
   }
 
   async function handleDownloadCombined() {
     setBuildingCombined(true);
-    showToast('Assembling multi-page combined PDF document…', 'info');
+    showToast(t('toastPdfBuilding'), 'info');
     try {
       const bytes = await buildCombinedPdf(results);
       downloadBlob(bytes, `${currentTemplate?.name.replace(/\s+/g, '_') || 'CertiFlow'}_All_In_One.pdf`);
-      showToast('Combined PDF downloaded successfully', 'success');
+      showToast(t('toastPdfSuccess'), 'success');
     } catch {
-      showToast('Failed to generate combined PDF', 'error');
+      showToast(t('toastPdfError'), 'error');
     }
     setBuildingCombined(false);
   }
@@ -134,7 +136,7 @@ export default function GenerateStep() {
   function handleDownloadSingle(r: CertificateResult) {
     if (r.pdfBytes) {
       downloadBlob(r.pdfBytes, r.fileName);
-      showToast(`Downloaded ${r.fileName}`, 'success');
+      showToast(t('toastDownloadedSingle', { filename: r.fileName }), 'success');
     }
   }
 
@@ -165,33 +167,40 @@ export default function GenerateStep() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Top Banner: Status & Hero Download CTAs */}
-      <div className="saas-card rounded-3xl p-6 sm:p-8 border border-sky-100 relative overflow-hidden bg-white shadow-sm">
+      <div className="saas-card rounded-3xl p-6 sm:p-8 border border-sky-100 dark:border-[#1B2C42] relative overflow-hidden bg-white dark:bg-[#101B2B] shadow-sm">
         {/* Glow accent */}
-        <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-emerald-50/50 -mr-20 -mt-20 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 end-0 w-80 h-80 rounded-full bg-emerald-50/50 dark:bg-emerald-950/20 -mr-20 -mt-20 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-bold text-[#35BFA3] mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/40 text-xs font-bold text-[#35BFA3] mb-2">
               {isGenerating ? (
                 <>
                   <Loader2 size={13} className="animate-spin text-[#00B8D9]" />
-                  <span>Generating Batch in Browser…</span>
+                  <span>{t('renderingBatchStatus')}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 size={13} className="text-[#35BFA3]" />
-                  <span>Generation Finished Successfully</span>
+                  <span>{t('finishedBatchStatus')}</span>
                 </>
               )}
             </div>
 
-            <h2 className="text-2xl font-extrabold text-[#102A43] tracking-tight">
-              {isGenerating ? 'Rendering Certificates…' : 'Export Ready: All Certificates Generated'}
+            <h2 className="text-2xl font-extrabold text-[#102A43] dark:text-white tracking-tight">
+              {isGenerating ? t('renderingBatchStatus') : t('finishedBatchStatus')}
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-xl">
               {isGenerating
-                ? `Processed ${results.filter(r => r.status !== 'generating').length} of ${selected.length} records…`
-                : `${doneResults.length} certificates generated with template "${currentTemplate?.name}" in ${generationDuration ?? 1.2}s. Download individually or as combined packages.`}
+                ? t('renderingBatchDesc', {
+                    current: results.filter(r => r.status !== 'generating').length,
+                    total: selected.length,
+                  })
+                : t('finishedBatchDesc', {
+                    count: doneResults.length,
+                    name: currentTemplate?.name ?? '',
+                    time: generationDuration ?? 1.2,
+                  })}
             </p>
           </div>
 
@@ -202,10 +211,14 @@ export default function GenerateStep() {
                 type="button"
                 onClick={handleDownloadCombined}
                 disabled={buildingCombined}
-                className="px-5 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-[#102A43] hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                className="px-5 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-xs font-bold text-[#102A43] dark:text-white hover:bg-gray-50 dark:hover:bg-[#1E304C] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
               >
-                {buildingCombined ? <Loader2 size={15} className="animate-spin text-[#00B8D9]" /> : <FileText size={15} className="text-[#00B8D9]" />}
-                <span>Combined PDF ({doneResults.length} Pages)</span>
+                {buildingCombined ? (
+                  <Loader2 size={15} className="animate-spin text-[#00B8D9]" />
+                ) : (
+                  <FileText size={15} className="text-[#00B8D9]" />
+                )}
+                <span>{t('combinedPdfBtn', { count: doneResults.length })}</span>
               </button>
 
               <button
@@ -216,21 +229,26 @@ export default function GenerateStep() {
                 style={{ background: 'linear-gradient(135deg, #35BFA3 0%, #259E85 100%)' }}
               >
                 {buildingZip ? <Loader2 size={15} className="animate-spin" /> : <Archive size={15} />}
-                <span>Download All as ZIP</span>
+                <span>{t('downloadAllZipBtn')}</span>
               </button>
             </div>
           )}
         </div>
 
         {/* Progress Bar & KPI Chips */}
-        <div className="mt-6 pt-5 border-t border-gray-100">
+        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-[#1B2C42]">
           <div className="flex items-center justify-between text-xs font-semibold mb-2">
-            <span className="text-[#102A43]">
-              {isGenerating ? `Processing ${results.length} of ${selected.length} records…` : 'Complete'}
+            <span className="text-[#102A43] dark:text-white">
+              {isGenerating
+                ? t('renderingBatchDesc', {
+                    current: results.length,
+                    total: selected.length,
+                  })
+                : t('statusSuccessful')}
             </span>
             <span className="font-mono text-[#00B8D9]">{progress}%</span>
           </div>
-          <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
@@ -241,22 +259,22 @@ export default function GenerateStep() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-            <div className="p-3 rounded-xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[11px] text-gray-400 block font-medium">Successful</span>
+            <div className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#162338]/60 border border-gray-100 dark:border-[#1B2C42]">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 block font-medium">{t('statusSuccessful')}</span>
               <span className="text-lg font-bold text-emerald-600 font-mono">{doneResults.length}</span>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[11px] text-gray-400 block font-medium">Failed</span>
+            <div className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#162338]/60 border border-gray-100 dark:border-[#1B2C42]">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 block font-medium">{t('statusFailed')}</span>
               <span className="text-lg font-bold text-red-500 font-mono">{errorResults.length}</span>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[11px] text-gray-400 block font-medium">Generation Speed</span>
-              <span className="text-lg font-bold text-[#102A43] font-mono">
+            <div className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#162338]/60 border border-gray-100 dark:border-[#1B2C42]">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 block font-medium">{t('statusSpeed')}</span>
+              <span className="text-lg font-bold text-[#102A43] dark:text-white font-mono">
                 {generationDuration ? `${generationDuration}s` : '1.2s'}
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[11px] text-gray-400 block font-medium">Estimated Package</span>
+            <div className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#162338]/60 border border-gray-100 dark:border-[#1B2C42]">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 block font-medium">{t('statusEstimatedSize')}</span>
               <span className="text-lg font-bold text-[#00B8D9] font-mono">
                 ~{(doneResults.length * 0.18).toFixed(1)} MB
               </span>
@@ -266,27 +284,28 @@ export default function GenerateStep() {
       </div>
 
       {/* Individual Certificate File Records List */}
-      <div className="saas-card rounded-2xl border border-sky-100 overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="saas-card rounded-2xl border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#1B2C42] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-[#102A43]">Generated PDF Files</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-50 text-[#00B8D9]">
-              {filteredResults.length} Files
+            <span className="font-bold text-sm text-[#102A43] dark:text-white">{t('generatedPdfFilesTitle')}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 text-[#00B8D9]">
+              {t('filesCountBadge', { count: filteredResults.length })}
             </span>
           </div>
 
           {/* Search bar */}
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs">
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#162338] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
             <Search size={14} className="text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Filter by participant or filename..."
-              className="bg-transparent border-none text-xs text-[#102A43] focus:outline-none w-48 sm:w-64"
+              placeholder={t('filterFilesPlaceholder')}
+              className="bg-transparent border-none text-xs text-[#102A43] dark:text-white focus:outline-none w-48 sm:w-64"
+              dir="auto"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <X size={12} />
               </button>
             )}
@@ -294,19 +313,19 @@ export default function GenerateStep() {
         </div>
 
         {/* Files Table List */}
-        <div className="divide-y divide-gray-100 max-h-[460px] overflow-y-auto scrollbar-thin">
+        <div className="divide-y divide-gray-100 dark:divide-[#1B2C42] max-h-[460px] overflow-y-auto scrollbar-thin">
           {filteredResults.length === 0 ? (
-            <div className="text-center py-12 text-xs text-gray-400">
-              {results.length === 0 ? 'Generation in progress…' : 'No certificates match your search'}
+            <div className="text-center py-12 text-xs text-gray-400 dark:text-gray-500">
+              {results.length === 0 ? t('renderingBatchStatus') : (language === 'ar' ? 'لا توجد شهادات مطابقة لبحثك' : 'No certificates match your search')}
             </div>
           ) : (
             filteredResults.map((r, i) => (
               <div
                 key={r.participantId}
-                className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/80 transition-colors"
+                className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/80 dark:hover:bg-[#162338]/80 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-[11px] font-mono text-gray-300 w-6 text-right flex-shrink-0">
+                  <span className="text-[11px] font-mono text-gray-300 dark:text-gray-600 w-6 text-end flex-shrink-0">
                     {i + 1}
                   </span>
 
@@ -321,11 +340,11 @@ export default function GenerateStep() {
                   )}
 
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-[#102A43] truncate" dir="auto">
+                    <div className="text-xs font-bold text-[#102A43] dark:text-white truncate" dir="auto">
                       {r.name}
                     </div>
-                    <div className="text-[11px] text-gray-400 truncate font-mono">
-                      {r.fileName} • {r.status === 'done' ? '~180 KB' : r.error || 'Rendering…'}
+                    <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate font-mono">
+                      {r.fileName} • {r.status === 'done' ? '~180 KB' : r.error || (language === 'ar' ? 'جارٍ التوليد...' : 'Rendering…')}
                     </div>
                   </div>
                 </div>
@@ -335,20 +354,20 @@ export default function GenerateStep() {
                     <button
                       type="button"
                       onClick={() => openPreviewModal(r)}
-                      className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-100 hover:text-[#102A43] transition-colors flex items-center gap-1"
-                      title="Preview PDF"
+                      className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1E304C] hover:text-[#102A43] dark:hover:text-white transition-colors flex items-center gap-1"
+                      title={t('inspectBtn')}
                     >
                       <Eye size={13} />
-                      <span className="hidden sm:inline">Inspect</span>
+                      <span className="hidden sm:inline">{t('inspectBtn')}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDownloadSingle(r)}
-                      className="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-xs font-bold text-[#00B8D9] hover:bg-cyan-100 transition-colors flex items-center gap-1"
-                      title="Download PDF"
+                      className="px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs font-bold text-[#00B8D9] hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-colors flex items-center gap-1"
+                      title={t('downloadSingleBtn')}
                     >
                       <Download size={13} />
-                      <span className="hidden sm:inline">Download</span>
+                      <span className="hidden sm:inline">{t('downloadSingleBtn')}</span>
                     </button>
                   </div>
                 )}
@@ -360,17 +379,17 @@ export default function GenerateStep() {
 
       {/* Bottom Completion Actions */}
       {!isGenerating && started && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-[#1B2C42]">
           <button
             type="button"
             onClick={() => {
               resetWizard();
               setView('dashboard');
             }}
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-[#102A43] hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#101B2B] text-xs font-bold text-[#102A43] dark:text-white hover:bg-gray-50 dark:hover:bg-[#162338] transition-colors flex items-center justify-center gap-2"
           >
             <LayoutDashboard size={15} />
-            <span>Return to Dashboard</span>
+            <span>{t('returnDashboardBtn')}</span>
           </button>
 
           <button
@@ -382,7 +401,7 @@ export default function GenerateStep() {
             style={{ background: '#00B8D9' }}
           >
             <RotateCcw size={15} />
-            <span>Create Another Batch</span>
+            <span>{t('createAnotherBatchBtn')}</span>
           </button>
         </div>
       )}
@@ -390,24 +409,24 @@ export default function GenerateStep() {
       {/* Individual Certificate Preview Modal */}
       {previewModalUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white dark:bg-[#101B2B] rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1B2C42] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[#102A43]">{previewModalTitle}</h3>
-                <p className="text-xs text-gray-400">PDF Certificate Preview</p>
+                <h3 className="font-bold text-sm text-[#102A43] dark:text-white">{previewModalTitle}</h3>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('pdfCertificateSubtitle')}</p>
               </div>
               <button
                 type="button"
                 onClick={closePreviewModal}
-                className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-500 hover:text-[#102A43]"
+                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#162338] text-gray-500 dark:text-gray-400 hover:text-[#102A43] dark:hover:text-white"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 p-2 bg-gray-100 min-h-[500px]">
+            <div className="flex-1 p-2 bg-gray-100 dark:bg-[#0B1522] min-h-[500px]">
               <iframe
                 src={previewModalUrl}
-                className="w-full h-full rounded-xl border border-gray-200"
+                className="w-full h-full rounded-xl border border-gray-200 dark:border-gray-700"
                 style={{ minHeight: '520px' }}
                 title="Certificate Preview Modal"
               />

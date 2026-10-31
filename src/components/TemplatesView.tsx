@@ -17,8 +17,8 @@ import {
 import TemplateStep from './TemplateStep';
 import { TEMPLATE_PRESETS } from '../services/templatePresets';
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString(undefined, {
+function formatDate(ts: number, lang: string) {
+  return new Date(ts).toLocaleDateString(lang === 'ar' ? 'ar-EG' : undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -36,28 +36,34 @@ export default function TemplatesView() {
     setView,
     resetWizard,
     showToast,
+    language,
+    t,
   } = useApp();
+
+  const isRtl = language === 'ar';
+  const BackIcon = isRtl ? ArrowRight : ArrowLeft;
+  const NextIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const [editing, setEditing] = useState<TemplateConfig | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   function handleDelete(id: string) {
-    if (confirm('Are you sure you want to delete this template?')) {
+    if (confirm(t('deleteConfirmMsg'))) {
       deleteTemplate(id);
     }
   }
 
-  function startRename(t: TemplateConfig) {
-    setRenamingId(t.id);
-    setRenameValue(t.name);
+  function startRename(tConfig: TemplateConfig) {
+    setRenamingId(tConfig.id);
+    setRenameValue(tConfig.name);
   }
 
   function confirmRename(id: string) {
-    const tpl = templates.find(t => t.id === id);
+    const tpl = templates.find(tItem => tItem.id === id);
     if (tpl && renameValue.trim()) {
       saveTemplate({ ...tpl, name: renameValue.trim() });
-      showToast('Template renamed', 'success');
+      showToast(language === 'ar' ? 'تمت إعادة تسمية القالب' : 'Template renamed', 'success');
     }
     setRenamingId(null);
   }
@@ -69,14 +75,16 @@ export default function TemplatesView() {
           <button
             type="button"
             onClick={() => setEditing(null)}
-            className="p-2 rounded-xl text-gray-500 hover:text-[#102A43] hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-xl text-gray-500 hover:text-[#102A43] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#162338] transition-colors"
           >
-            <ArrowLeft size={18} />
+            <BackIcon size={18} />
           </button>
           <div>
-            <div className="text-xs font-bold text-[#00B8D9] uppercase tracking-wider">Template Designer</div>
-            <h1 className="text-xl font-extrabold text-[#102A43]">
-              Editing "{editing.name}"
+            <div className="text-xs font-bold text-[#00B8D9] uppercase tracking-wider">
+              {language === 'ar' ? 'استوديو تصميم القوالب' : 'Template Designer'}
+            </div>
+            <h1 className="text-xl font-extrabold text-[#102A43] dark:text-white">
+              {language === 'ar' ? `تعديل "${editing.name}"` : `Editing "${editing.name}"`}
             </h1>
           </div>
         </div>
@@ -85,7 +93,7 @@ export default function TemplatesView() {
           initial={editing}
           onSave={_t => {
             setEditing(null);
-            showToast('Template saved', 'success');
+            showToast(t('toastTemplateSaved'), 'success');
           }}
         />
       </div>
@@ -98,13 +106,13 @@ export default function TemplatesView() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-bold text-[#00B8D9] uppercase tracking-wider">
-            Design Assets
+            {language === 'ar' ? 'أصول التصميم' : 'Design Assets'}
           </div>
-          <h1 className="text-2xl font-extrabold text-[#102A43] tracking-tight">
-            Templates Library
+          <h1 className="text-2xl font-extrabold text-[#102A43] dark:text-white tracking-tight">
+            {t('templatesLibraryTitle')}
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Manage reusable certificate templates, backdrop images, and typography models
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {t('templatesLibrarySub')}
           </p>
         </div>
 
@@ -118,19 +126,21 @@ export default function TemplatesView() {
           style={{ background: '#00B8D9' }}
         >
           <Plus size={16} />
-          <span>New Custom Template</span>
+          <span>{t('createNewTemplateBtn')}</span>
         </button>
       </div>
 
       {/* Built-in Presets Catalog */}
-      <div className="saas-card rounded-2xl p-6 border border-sky-100 space-y-4">
+      <div className="saas-card rounded-2xl p-6 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-[#102A43] flex items-center gap-2">
+            <h2 className="text-sm font-bold text-[#102A43] dark:text-white flex items-center gap-2">
               <Sparkles size={16} className="text-[#FCE445]" />
-              Official CertiFlow Presets
+              {t('allPresetsTitle')}
             </h2>
-            <p className="text-xs text-gray-500">Ready-to-use professional vector templates</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {language === 'ar' ? 'قوالب متجهة احترافية جاهزة للاستخدام الفوري' : 'Ready-to-use professional vector templates'}
+            </p>
           </div>
         </div>
 
@@ -138,10 +148,10 @@ export default function TemplatesView() {
           {TEMPLATE_PRESETS.map(preset => (
             <div
               key={preset.id}
-              className="p-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#00B8D9] transition-all flex flex-col justify-between group"
+              className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] hover:border-[#00B8D9] dark:hover:border-[#00B8D9] transition-all flex flex-col justify-between group"
             >
               <div>
-                <div className="h-24 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 mb-2.5 flex items-center justify-center p-1.5">
+                <div className="h-24 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#101B2B] border border-gray-100 dark:border-gray-800 mb-2.5 flex items-center justify-center p-1.5">
                   <div
                     className="w-full h-full transform scale-90 pointer-events-none group-hover:scale-95 transition-transform"
                     dangerouslySetInnerHTML={{ __html: preset.svg }}
@@ -150,11 +160,11 @@ export default function TemplatesView() {
                 <div className="text-[10px] font-bold text-[#00B8D9] uppercase tracking-wider">
                   {preset.category}
                 </div>
-                <h3 className="font-bold text-xs text-[#102A43] mt-0.5 truncate">{preset.name}</h3>
+                <h3 className="font-bold text-xs text-[#102A43] dark:text-white mt-0.5 truncate">{preset.name}</h3>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-gray-400 capitalize">
+              <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-gray-400 dark:text-gray-500 capitalize">
                   {preset.orientation}
                 </span>
                 <button
@@ -163,7 +173,7 @@ export default function TemplatesView() {
                   className="px-2.5 py-1 text-xs font-bold rounded-lg text-white shadow-sm hover:opacity-90 flex items-center gap-1"
                   style={{ background: '#00B8D9' }}
                 >
-                  Use <ArrowRight size={11} />
+                  <span>{t('useTemplateBtn')}</span> <NextIcon size={11} />
                 </button>
               </div>
             </div>
@@ -174,18 +184,18 @@ export default function TemplatesView() {
       {/* Saved Custom & Reusable Templates */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-[#102A43] flex items-center gap-2">
+          <h2 className="text-base font-bold text-[#102A43] dark:text-white flex items-center gap-2">
             <Layers size={16} className="text-[#00B8D9]" />
-            Your Saved Templates ({templates.length})
+            {t('customSavedTemplatesTitle')} ({templates.length})
           </h2>
         </div>
 
         {templates.length === 0 ? (
-          <div className="saas-card rounded-2xl border-2 border-dashed border-gray-200 p-14 text-center">
-            <Layers size={40} className="mx-auto mb-3 text-gray-300" />
-            <h3 className="font-bold text-sm text-[#102A43]">No custom templates saved yet</h3>
-            <p className="text-xs text-gray-400 mt-1 mb-4">
-              Create a new certificate template to reuse its styling across multiple batches.
+          <div className="saas-card rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-[#101B2B] p-14 text-center">
+            <Layers size={40} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+            <h3 className="font-bold text-sm text-[#102A43] dark:text-white">{t('noSavedTemplatesTitle')}</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-4 max-w-sm mx-auto">
+              {t('noSavedTemplatesDesc')}
             </p>
             <button
               type="button"
@@ -193,10 +203,10 @@ export default function TemplatesView() {
                 resetWizard();
                 setView('create');
               }}
-              className="px-4 py-2 rounded-xl text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl text-white text-xs font-bold shadow hover:opacity-90"
               style={{ background: '#00B8D9' }}
             >
-              Create First Template
+              {t('createNewTemplateBtn')}
             </button>
           </div>
         ) : (
@@ -204,16 +214,16 @@ export default function TemplatesView() {
             {templates.map(tpl => (
               <div
                 key={tpl.id}
-                className="saas-card rounded-2xl p-5 border border-sky-100 flex flex-col justify-between group hover:border-[#00B8D9]/50 transition-all"
+                className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] flex flex-col justify-between group hover:border-[#00B8D9]/50 transition-all"
               >
                 <div>
                   {/* Thumbnail / Graphic */}
-                  <div className="mb-3.5 rounded-xl overflow-hidden border border-gray-100 h-32 bg-gray-50 flex items-center justify-center p-1">
+                  <div className="mb-3.5 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 h-32 bg-gray-50 dark:bg-[#162338] flex items-center justify-center p-1">
                     {tpl.templateImageData ? (
                       tpl.templateFileType === 'pdf' ? (
                         <div className="text-center text-gray-400 text-xs">
                           <div className="text-2xl mb-1">📄</div>
-                          <span className="font-semibold text-gray-600">PDF Document Template</span>
+                          <span className="font-semibold text-gray-600 dark:text-gray-300">PDF Document Template</span>
                         </div>
                       ) : (
                         <img
@@ -223,7 +233,7 @@ export default function TemplatesView() {
                         />
                       )
                     ) : (
-                      <div className="text-4xl text-gray-300">🎓</div>
+                      <div className="text-4xl text-gray-300 dark:text-gray-600">🎓</div>
                     )}
                   </div>
 
@@ -239,32 +249,35 @@ export default function TemplatesView() {
                           if (e.key === 'Escape') setRenamingId(null);
                         }}
                         autoFocus
-                        className="flex-1 border border-[#00B8D9] rounded-lg px-2 py-1 text-xs font-bold text-[#102A43] focus:outline-none"
+                        className="flex-1 border border-[#00B8D9] bg-white dark:bg-[#162338] text-[#102A43] dark:text-white rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
+                        dir="auto"
                       />
                       <button
                         type="button"
                         onClick={() => confirmRename(tpl.id)}
-                        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                        className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded"
+                        title="Save"
                       >
                         <Check size={14} />
                       </button>
                       <button
                         type="button"
                         onClick={() => setRenamingId(null)}
-                        className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                        className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                        title="Cancel"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
-                    <h3 className="font-bold text-sm text-[#102A43] truncate group-hover:text-[#00B8D9] transition-colors">
+                    <h3 className="font-bold text-sm text-[#102A43] dark:text-white truncate group-hover:text-[#00B8D9] transition-colors" dir="auto">
                       {tpl.name}
                     </h3>
                   )}
 
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                  <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 mt-1">
                     <Clock size={11} />
-                    <span>{formatDate(tpl.updatedAt)}</span>
+                    <span>{formatDate(tpl.updatedAt, language)}</span>
                     <span>•</span>
                     <span className="capitalize">{tpl.orientation}</span>
                     <span>•</span>
@@ -273,22 +286,22 @@ export default function TemplatesView() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => startBatchWithTemplate(tpl)}
                     className="flex-1 py-1.5 px-3 rounded-xl text-white text-xs font-bold shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
                     style={{ background: '#00B8D9' }}
                   >
-                    <span>Use in Batch</span>
-                    <ArrowRight size={12} />
+                    <span>{language === 'ar' ? 'استخدام في دفعة' : 'Use in Batch'}</span>
+                    <NextIcon size={12} />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setEditing(tpl)}
-                    className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-[#102A43] transition-colors"
-                    title="Edit Template"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1E304C] hover:text-[#102A43] dark:hover:text-white transition-colors"
+                    title={t('editTemplateBtn')}
                   >
                     <Pencil size={13} />
                   </button>
@@ -296,8 +309,8 @@ export default function TemplatesView() {
                   <button
                     type="button"
                     onClick={() => startRename(tpl)}
-                    className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-[#102A43] transition-colors"
-                    title="Rename"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1E304C] hover:text-[#102A43] dark:hover:text-white transition-colors"
+                    title={t('renameTemplateBtn')}
                   >
                     <Pencil size={13} />
                   </button>
@@ -305,8 +318,8 @@ export default function TemplatesView() {
                   <button
                     type="button"
                     onClick={() => duplicateTemplate(tpl.id)}
-                    className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-[#102A43] transition-colors"
-                    title="Duplicate Template"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1E304C] hover:text-[#102A43] dark:hover:text-white transition-colors"
+                    title={t('duplicateTemplateBtn')}
                   >
                     <Copy size={13} />
                   </button>
@@ -314,8 +327,8 @@ export default function TemplatesView() {
                   <button
                     type="button"
                     onClick={() => handleDelete(tpl.id)}
-                    className="p-2 rounded-xl border border-gray-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                    title="Delete Template"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 transition-colors"
+                    title={t('deleteTemplateBtn')}
                   >
                     <Trash2 size={13} />
                   </button>
