@@ -334,13 +334,15 @@ async function drawNameOnPage(
   const textBoxWidth = wPct * pageWidth;
 
   // Calibrate vertical position to match PositionEditor preview down to the pixel:
-  // In PositionEditor: BASE_WIDTH = 580, ratio = pageWidth / pageHeight, BASE_HEIGHT = Math.round(580 / ratio)
-  // previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / 841.89) * 580 * 1.3))
+  // In PositionEditor: BASE_WIDTH = isLandscape ? 580 : 420, ratio = pageWidth / pageHeight, BASE_HEIGHT = Math.round(BASE_WIDTH / ratio)
+  // previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / pageWidth) * baseWidth * 1.3))
   // boxHeight = Math.max(30, previewFontSize * 1.8)
   // Text is centered vertically inside the box in preview:
+  const isLandscape = pageWidth > pageHeight;
+  const baseWidth = isLandscape ? 580 : 420;
   const previewRatio = pageWidth / pageHeight;
-  const baseHeight = Math.round(580 / previewRatio);
-  const previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / 841.89) * 580 * 1.3));
+  const baseHeight = Math.round(baseWidth / previewRatio);
+  const previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / pageWidth) * baseWidth * 1.3));
   const previewBoxHeight = Math.max(30, previewFontSize * 1.8);
   const boxHeightFraction = previewBoxHeight / baseHeight;
 

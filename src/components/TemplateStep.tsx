@@ -97,6 +97,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
   const [error, setError] = useState('');
   const [sampleName, setSampleName] = useState(SAMPLE_NAMES_TEST[0]);
   const [activeTab, setActiveTab] = useState<'presets' | 'upload'>('presets');
+  const [presetFilter, setPresetFilter] = useState<'all' | 'landscape' | 'portrait'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state to app context whenever template changes
@@ -106,6 +107,22 @@ export default function TemplateStep({ initial, onSave }: Props) {
 
   function update<K extends keyof TemplateConfig>(key: K, value: TemplateConfig[K]) {
     setTemplate(prev => ({ ...prev, [key]: value }));
+  }
+
+  function handleOrientationChange(newOrient: Orientation) {
+    if (template.presetId) {
+      const curPreset = getPresetById(template.presetId);
+      if (curPreset.orientation !== newOrient) {
+        // Auto-switch to matching preset in new orientation
+        const match = TEMPLATE_PRESETS.find(p => p.orientation === newOrient && (language === 'ar' ? p.id.startsWith('arabic') : !p.id.startsWith('arabic')))
+          || TEMPLATE_PRESETS.find(p => p.orientation === newOrient);
+        if (match) {
+          applyPreset(match.id);
+          return;
+        }
+      }
+    }
+    update('orientation', newOrient);
   }
 
   function updateStyle<K extends keyof TextStyle>(key: K, value: TextStyle[K]) {
@@ -251,10 +268,48 @@ export default function TemplateStep({ initial, onSave }: Props) {
           </div>
 
           {activeTab === 'presets' ? (
-            <div className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2">
-                {TEMPLATE_PRESETS.map(p => {
+            <div className="space-y-3">
+              {/* Orientation Filter Tabs */}
+              <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-[#162338] rounded-xl text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setPresetFilter('all')}
+                  className={`flex-1 py-1 rounded-lg transition-colors text-center ${
+                    presetFilter === 'all'
+                      ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {language === 'ar' ? 'الكل' : 'All'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPresetFilter('landscape')}
+                  className={`flex-1 py-1 rounded-lg transition-colors text-center ${
+                    presetFilter === 'landscape'
+                      ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {language === 'ar' ? 'أفقية ↔' : 'Landscape ↔'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPresetFilter('portrait')}
+                  className={`flex-1 py-1 rounded-lg transition-colors text-center ${
+                    presetFilter === 'portrait'
+                      ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {language === 'ar' ? 'عمودية ↕' : 'Portrait ↕'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 max-h-[340px] overflow-y-auto pr-1">
+                {TEMPLATE_PRESETS.filter(p => presetFilter === 'all' || p.orientation === presetFilter).map(p => {
                   const isSelected = template.presetId === p.id;
+                  const isPortrait = p.orientation === 'portrait';
                   return (
                     <button
                       key={p.id}
@@ -273,7 +328,16 @@ export default function TemplateStep({ initial, onSave }: Props) {
                         />
                       </div>
                       <div className="text-xs font-bold text-[#102A43] dark:text-white truncate">{p.name}</div>
-                      <div className="text-[10px] text-gray-500 dark:text-gray-400 capitalize">{p.orientation} • {p.defaultFont}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${
+                          isPortrait
+                            ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300'
+                            : 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                        }`}>
+                          {isPortrait ? (language === 'ar' ? 'عمودية' : 'Portrait') : (language === 'ar' ? 'أفقية' : 'Landscape')}
+                        </span>
+                        <span className="text-[10px] text-gray-400 truncate">{p.defaultFont}</span>
+                      </div>
                       {isSelected && (
                         <div className="absolute top-2 end-2 w-4 h-4 rounded-full bg-[#00B8D9] text-white flex items-center justify-center text-[10px]">
                           <Check size={10} />
@@ -369,7 +433,7 @@ export default function TemplateStep({ initial, onSave }: Props) {
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">{t('orientationLabel')}</label>
               <select
                 value={template.orientation}
-                onChange={e => update('orientation', e.target.value as Orientation)}
+                onChange={e => handleOrientationChange(e.target.value as Orientation)}
                 className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
               >
                 <option value="landscape">{t('orientationLandscape')}</option>

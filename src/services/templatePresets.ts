@@ -437,6 +437,233 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
   </g>
 </svg>`,
   },
+  {
+    id: 'arabic-portrait-honor',
+    name: 'شهادة تقدير ملكية (عمودية)',
+    category: 'الشهادات والتقدير (Arabic Portrait)',
+    description: 'تصميم عمودي ملكي فاخر بزخارف إسلامية ذهبية مذهبة وتنسيق طولي ملائم للشهادات الرسمية والدبلومات.',
+    orientation: 'portrait',
+    defaultFont: 'Amiri',
+    defaultColor: '#102A43',
+    defaultFontSize: 46,
+    defaultPosition: { x: 10, y: 47, width: 80 },
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1414 2000" width="1414" height="2000">
+  <defs>
+    <linearGradient id="pArGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE445"/>
+      <stop offset="50%" stop-color="#E2BA1E"/>
+      <stop offset="100%" stop-color="#C59600"/>
+    </linearGradient>
+    <linearGradient id="pArNavy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#102A43"/>
+      <stop offset="100%" stop-color="#091B2E"/>
+    </linearGradient>
+    <filter id="pArShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1414" height="2000" fill="#FCFDFE"/>
+  <rect x="30" y="30" width="1354" height="1940" fill="#FFFFFF" stroke="#E2EFF3" stroke-width="2"/>
+
+  <!-- Ornate Outer & Inner Borders -->
+  <rect x="50" y="50" width="1314" height="1900" fill="none" stroke="#102A43" stroke-width="6"/>
+  <rect x="64" y="64" width="1286" height="1872" fill="none" stroke="url(#pArGold)" stroke-width="3"/>
+  <rect x="76" y="76" width="1262" height="1848" fill="none" stroke="#102A43" stroke-width="1.5" stroke-dasharray="8 6"/>
+
+  <!-- Islamic 8-Point Star Corners -->
+  <g transform="translate(90, 90)">
+    <rect x="-16" y="-16" width="32" height="32" fill="url(#pArGold)"/>
+    <rect x="-16" y="-16" width="32" height="32" transform="rotate(45)" fill="url(#pArGold)"/>
+    <circle cx="0" cy="0" r="7" fill="#102A43"/>
+  </g>
+  <g transform="translate(1324, 90)">
+    <rect x="-16" y="-16" width="32" height="32" fill="url(#pArGold)"/>
+    <rect x="-16" y="-16" width="32" height="32" transform="rotate(45)" fill="url(#pArGold)"/>
+    <circle cx="0" cy="0" r="7" fill="#102A43"/>
+  </g>
+  <g transform="translate(90, 1910)">
+    <rect x="-16" y="-16" width="32" height="32" fill="url(#pArGold)"/>
+    <rect x="-16" y="-16" width="32" height="32" transform="rotate(45)" fill="url(#pArGold)"/>
+    <circle cx="0" cy="0" r="7" fill="#102A43"/>
+  </g>
+  <g transform="translate(1324, 1910)">
+    <rect x="-16" y="-16" width="32" height="32" fill="url(#pArGold)"/>
+    <rect x="-16" y="-16" width="32" height="32" transform="rotate(45)" fill="url(#pArGold)"/>
+    <circle cx="0" cy="0" r="7" fill="#102A43"/>
+  </g>
+
+  <!-- Top Center Islamic Arch Ornament -->
+  <g transform="translate(707, 180)">
+    <!-- Arch -->
+    <path d="M -80 40 C -80 -20 0 -50 0 -50 C 0 -50 80 -20 80 40 Z" fill="none" stroke="url(#pArGold)" stroke-width="3"/>
+    <circle cx="0" cy="-60" r="10" fill="url(#pArGold)"/>
+    <!-- Islamic 8-point star in center -->
+    <g transform="translate(0, 0)">
+      <rect x="-18" y="-18" width="36" height="36" fill="#102A43" filter="url(#pArShadow)"/>
+      <rect x="-18" y="-18" width="36" height="36" transform="rotate(45)" fill="#102A43"/>
+      <circle cx="0" cy="0" r="14" fill="url(#pArGold)"/>
+      <circle cx="0" cy="0" r="8" fill="#102A43"/>
+    </g>
+  </g>
+
+  <!-- Basmala & Header -->
+  <text x="707" y="290" text-anchor="middle" font-family="'Amiri', serif" font-size="28" font-weight="700" fill="#C59600">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</text>
+  <text x="707" y="340" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="16" font-weight="700" letter-spacing="4" fill="#00B8D9">المملكة • الإدارة العامة للتعليم والتدريب</text>
+
+  <!-- Main Certificate Title -->
+  <text x="707" y="440" text-anchor="middle" font-family="'Amiri', 'Cairo', serif" font-size="64" font-weight="700" fill="#102A43">شَهَادَةُ شُكْرٍ وَتَقْدِيرٍ</text>
+  
+  <line x1="450" y1="480" x2="964" y2="480" stroke="url(#pArGold)" stroke-width="3"/>
+  <circle cx="707" cy="480" r="7" fill="#102A43"/>
+
+  <text x="707" y="550" text-anchor="middle" font-family="'Amiri', serif" font-size="26" fill="#64748B">تتشرف إدارة المؤسسة بمنح هذه الشهادة المعتمدة إلى</text>
+
+  <!-- Name Placeholder Guide Underline at Y = 47% ~ 940px -->
+  <line x1="250" y1="1030" x2="1164" y2="1030" stroke="#CBD5E1" stroke-width="2"/>
+  <circle cx="707" cy="1030" r="5" fill="#C59600"/>
+
+  <!-- Appreciation Description -->
+  <text x="707" y="1130" text-anchor="middle" font-family="'Amiri', serif" font-size="26" font-weight="700" fill="#102A43">
+    تقديراً لجهوده المتميزة وتفوقه المستمر
+  </text>
+  <text x="707" y="1180" text-anchor="middle" font-family="'Amiri', serif" font-size="22" fill="#64748B">
+    ومساهمته الفعالة في إنجاح البرامج والأنشطة الأكاديمية والمهنية بكل كفاءة واقتدار.
+  </text>
+  <text x="707" y="1225" text-anchor="middle" font-family="'Amiri', serif" font-size="20" font-style="italic" fill="#94A3B8">
+    متمنين له دوام التوفيق والسداد في مسيرته المستقبلية.
+  </text>
+
+  <!-- Gold Seal Emblem in Middle-Bottom -->
+  <g transform="translate(707, 1420)">
+    <circle cx="0" cy="0" r="75" fill="url(#pArGold)" filter="url(#pArShadow)"/>
+    <circle cx="0" cy="0" r="64" fill="none" stroke="#102A43" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="58" fill="#102A43"/>
+    <text x="0" y="-8" text-anchor="middle" font-family="'Amiri', serif" font-size="18" font-weight="700" fill="#FCE445">معتمد رسمياً</text>
+    <text x="0" y="20" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" letter-spacing="2">OFFICIAL SEAL</text>
+    <path d="M -26 58 L -45 130 L 0 110 L 45 130 L 26 58 Z" fill="url(#pArGold)" opacity="0.95"/>
+  </g>
+
+  <!-- Signatures -->
+  <g transform="translate(320, 1680)">
+    <line x1="-130" y1="0" x2="130" y2="0" stroke="#102A43" stroke-width="1.5"/>
+    <text x="0" y="32" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="18" font-weight="700" fill="#102A43">أ.د. عبد الرحمن السعيد</text>
+    <text x="0" y="56" text-anchor="middle" font-family="'Amiri', serif" font-size="16" fill="#64748B">عميد الشؤون الأكاديمية</text>
+  </g>
+
+  <g transform="translate(1094, 1680)">
+    <line x1="-130" y1="0" x2="130" y2="0" stroke="#102A43" stroke-width="1.5"/>
+    <text x="0" y="32" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="18" font-weight="700" fill="#102A43">د. فاطمة الزهراء الشريف</text>
+    <text x="0" y="56" text-anchor="middle" font-family="'Amiri', serif" font-size="16" fill="#64748B">المدير العام للمؤسسة</text>
+  </g>
+
+  <!-- Document ID Footer -->
+  <text x="707" y="1880" text-anchor="middle" font-family="'Space Mono', monospace" font-size="12" letter-spacing="3" fill="#94A3B8">
+    DOCUMENT ID: CF-AR-PORTRAIT-VERIFIED • ISSUED VIA CERTIFLOW ENGINE
+  </text>
+</svg>`,
+  },
+  {
+    id: 'academic-portrait-diploma',
+    name: 'Academic Diploma (Portrait)',
+    category: 'Collegiate & Formal (Portrait)',
+    description: 'Classical formal vertical diploma featuring collegiate gold leaf borders, embossed star crest, and Cinzel typography.',
+    orientation: 'portrait',
+    defaultFont: 'Cinzel',
+    defaultColor: '#102A43',
+    defaultFontSize: 44,
+    defaultPosition: { x: 10, y: 47, width: 80 },
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1414 2000" width="1414" height="2000">
+  <defs>
+    <linearGradient id="pAcGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE445"/>
+      <stop offset="50%" stop-color="#E2BA1E"/>
+      <stop offset="100%" stop-color="#C59600"/>
+    </linearGradient>
+    <filter id="pAcShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1414" height="2000" fill="#FAFBFD"/>
+  <rect x="30" y="30" width="1354" height="1940" fill="#FFFFFF" stroke="#E2EFF3" stroke-width="2"/>
+
+  <!-- Ornate Diploma Borders -->
+  <rect x="50" y="50" width="1314" height="1900" fill="none" stroke="#102A43" stroke-width="6"/>
+  <rect x="65" y="65" width="1284" height="1870" fill="none" stroke="url(#pAcGold)" stroke-width="3"/>
+  <rect x="76" y="76" width="1262" height="1848" fill="none" stroke="#102A43" stroke-width="1.5" stroke-dasharray="8 6"/>
+
+  <!-- Classical Corner Flourishes -->
+  <path d="M 50 140 C 90 140 140 90 140 50 L 120 50 C 120 80 80 120 50 120 Z" fill="url(#pAcGold)"/>
+  <circle cx="100" cy="100" r="9" fill="#102A43"/>
+
+  <path d="M 1364 140 C 1324 140 1274 90 1274 50 L 1294 50 C 1294 80 1334 120 1364 120 Z" fill="url(#pAcGold)"/>
+  <circle cx="1314" cy="100" r="9" fill="#102A43"/>
+
+  <path d="M 50 1860 C 90 1860 140 1910 140 1950 L 120 1950 C 120 1920 80 1880 50 1880 Z" fill="url(#pAcGold)"/>
+  <circle cx="100" cy="1900" r="9" fill="#102A43"/>
+
+  <path d="M 1364 1860 C 1324 1860 1274 1910 1274 1950 L 1294 1950 C 1294 1920 1334 1880 1364 1880 Z" fill="url(#pAcGold)"/>
+  <circle cx="1314" cy="1900" r="9" fill="#102A43"/>
+
+  <!-- University Emblem Seal at Top -->
+  <g transform="translate(707, 200)" text-anchor="middle">
+    <circle cx="0" cy="0" r="50" fill="#102A43" filter="url(#pAcShadow)"/>
+    <circle cx="0" cy="0" r="44" fill="none" stroke="url(#pAcGold)" stroke-width="2.5"/>
+    <path d="M 0 -25 L 7 -8 L 24 -8 L 11 2 L 15 20 L 0 9 L -15 20 L -11 2 L -24 -8 L -7 -8 Z" fill="url(#pAcGold)"/>
+  </g>
+
+  <!-- Typography Hierarchy -->
+  <text x="707" y="320" text-anchor="middle" font-family="'Cinzel', Georgia, serif" font-size="20" font-weight="600" letter-spacing="10" fill="#00B8D9">COLLEGIATE ACCREDITATION</text>
+  <text x="707" y="400" text-anchor="middle" font-family="'Cinzel', Georgia, serif" font-size="52" font-weight="700" letter-spacing="5" fill="#102A43">DIPLOMA OF EXCELLENCE</text>
+  
+  <line x1="480" y1="435" x2="934" y2="435" stroke="url(#pAcGold)" stroke-width="3"/>
+  <circle cx="707" cy="435" r="6" fill="#102A43"/>
+
+  <text x="707" y="520" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="24" font-style="italic" fill="#5A7184">By decision of the Academic Council, this honor is conferred upon</text>
+
+  <!-- Name Placeholder Guide Underline at Y = 47% ~ 940px -->
+  <line x1="250" y1="1030" x2="1164" y2="1030" stroke="#CBD5E1" stroke-width="1.5"/>
+
+  <!-- Citation Body -->
+  <text x="707" y="1120" text-anchor="middle" font-family="'Inter', sans-serif" font-size="22" fill="#5A7184">
+    for distinguished academic accomplishment, professional integrity,
+  </text>
+  <text x="707" y="1160" text-anchor="middle" font-family="'Inter', sans-serif" font-size="22" fill="#5A7184">
+    and exemplary performance in satisfying all institutional degree standards.
+  </text>
+
+  <!-- Medallion Seal Emblem at Bottom Center -->
+  <g transform="translate(707, 1420)">
+    <circle cx="0" cy="0" r="72" fill="url(#pAcGold)" filter="url(#pAcShadow)"/>
+    <circle cx="0" cy="0" r="60" fill="none" stroke="#102A43" stroke-width="2"/>
+    <circle cx="0" cy="0" r="54" fill="#102A43"/>
+    <text x="0" y="-8" text-anchor="middle" font-family="'Cinzel', serif" font-size="13" font-weight="700" fill="#FCE445" letter-spacing="2">ACADEMIC</text>
+    <text x="0" y="16" text-anchor="middle" font-family="'Cinzel', serif" font-size="15" font-weight="800" fill="#FFFFFF" letter-spacing="2">HONORS</text>
+    <path d="M -26 55 L -42 125 L 0 105 L 42 125 L 26 55 Z" fill="url(#pAcGold)" opacity="0.95"/>
+  </g>
+
+  <!-- Signatures -->
+  <g transform="translate(330, 1680)">
+    <line x1="-130" y1="0" x2="130" y2="0" stroke="#102A43" stroke-width="1.5"/>
+    <text x="0" y="30" text-anchor="middle" font-family="'Inter', sans-serif" font-size="18" font-weight="600" fill="#102A43">Jonathan Sterling, Ph.D.</text>
+    <text x="0" y="52" text-anchor="middle" font-family="'Inter', sans-serif" font-size="14" fill="#94A3B8">Chancellor &amp; Board President</text>
+  </g>
+
+  <g transform="translate(1084, 1680)">
+    <line x1="-130" y1="0" x2="130" y2="0" stroke="#102A43" stroke-width="1.5"/>
+    <text x="0" y="30" text-anchor="middle" font-family="'Inter', sans-serif" font-size="18" font-weight="600" fill="#102A43">Dr. Margaret Thorne</text>
+    <text x="0" y="52" text-anchor="middle" font-family="'Inter', sans-serif" font-size="14" fill="#94A3B8">Dean of Academic Council</text>
+  </g>
+
+  <!-- Footer Info -->
+  <text x="707" y="1880" text-anchor="middle" font-family="'Space Mono', monospace" font-size="12" letter-spacing="3" fill="#A0AEC0">
+    DOCUMENT ID: CF-DIPLOMA-PORTRAIT • VERIFIED CERTIFICATE CREDENTIAL
+  </text>
+</svg>`,
+  },
 ];
 
 /**

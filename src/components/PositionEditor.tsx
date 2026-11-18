@@ -63,11 +63,11 @@ export default function PositionEditor({
   }, [template.templateImageData, template.templateFileType]);
 
   const isLandscape = template.orientation === 'landscape';
-  // Aspect ratio for A4
+  // Aspect ratio for A4 (Landscape: 841.89 / 595.28 ≈ 1.414, Portrait: 595.28 / 841.89 ≈ 0.707)
   const ratio = isLandscape ? 841.89 / 595.28 : 595.28 / 841.89;
 
-  // Base canvas preview size
-  const BASE_WIDTH = 580;
+  // Base canvas preview size (580px wide for landscape, 420px wide for portrait to fit viewport comfortably)
+  const BASE_WIDTH = isLandscape ? 580 : 420;
   const BASE_HEIGHT = Math.round(BASE_WIDTH / ratio);
 
   function getContainerRect() {
@@ -175,9 +175,10 @@ export default function PositionEditor({
     ...customStyle,
   };
 
-  // Dynamic font sizing calibrated to preview scale
+  // Dynamic font sizing calibrated to preview scale (using corresponding page width in pt)
   const fontPt = effectiveStyle.fontSize;
-  const previewFontSize = Math.max(9, Math.min(48, (fontPt / 841.89) * BASE_WIDTH * 1.3));
+  const pageWidthPt = isLandscape ? 841.89 : 595.28;
+  const previewFontSize = Math.max(9, Math.min(48, (fontPt / pageWidthPt) * BASE_WIDTH * 1.3));
 
   function getFontFamilyClass(family: string) {
     switch (family) {

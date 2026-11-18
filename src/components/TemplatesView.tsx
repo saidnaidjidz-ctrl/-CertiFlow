@@ -47,6 +47,7 @@ export default function TemplatesView() {
   const [editing, setEditing] = useState<TemplateConfig | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [presetFilter, setPresetFilter] = useState<'all' | 'landscape' | 'portrait'>('all');
 
   function handleDelete(id: string) {
     if (confirm(t('deleteConfirmMsg'))) {
@@ -132,52 +133,101 @@ export default function TemplatesView() {
 
       {/* Built-in Presets Catalog */}
       <div className="saas-card rounded-2xl p-6 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-[#102A43] dark:text-white flex items-center gap-2">
               <Sparkles size={16} className="text-[#FCE445]" />
               {t('allPresetsTitle')}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {language === 'ar' ? 'قوالب متجهة احترافية جاهزة للاستخدام الفوري' : 'Ready-to-use professional vector templates'}
+              {language === 'ar' ? 'قوالب متجهة احترافية جاهزة للاستخدام الفوري (أفقية وعمودية)' : 'Ready-to-use vector templates (Landscape & Portrait)'}
             </p>
+          </div>
+
+          {/* Orientation Filter Tabs */}
+          <div className="flex bg-gray-100 dark:bg-[#162338] p-1 rounded-xl text-xs font-semibold self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setPresetFilter('all')}
+              className={`px-3 py-1 rounded-lg transition-colors ${
+                presetFilter === 'all'
+                  ? 'bg-white dark:bg-[#1E304C] text-[#102A43] dark:text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              }`}
+            >
+              {language === 'ar' ? 'الكل' : 'All'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPresetFilter('landscape')}
+              className={`px-3 py-1 rounded-lg transition-colors ${
+                presetFilter === 'landscape'
+                  ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              }`}
+            >
+              {language === 'ar' ? 'أفقية ↔' : 'Landscape ↔'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPresetFilter('portrait')}
+              className={`px-3 py-1 rounded-lg transition-colors ${
+                presetFilter === 'portrait'
+                  ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              }`}
+            >
+              {language === 'ar' ? 'عمودية ↕' : 'Portrait ↕'}
+            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {TEMPLATE_PRESETS.map(preset => (
-            <div
-              key={preset.id}
-              className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] hover:border-[#00B8D9] dark:hover:border-[#00B8D9] transition-all flex flex-col justify-between group"
-            >
-              <div>
-                <div className="h-24 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#101B2B] border border-gray-100 dark:border-gray-800 mb-2.5 flex items-center justify-center p-1.5">
-                  <div
-                    className="w-full h-full transform scale-90 pointer-events-none group-hover:scale-95 transition-transform"
-                    dangerouslySetInnerHTML={{ __html: preset.svg }}
-                  />
+          {TEMPLATE_PRESETS.filter(p => presetFilter === 'all' || p.orientation === presetFilter).map(preset => {
+            const isPortrait = preset.orientation === 'portrait';
+            return (
+              <div
+                key={preset.id}
+                className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] hover:border-[#00B8D9] dark:hover:border-[#00B8D9] transition-all flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="h-28 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#101B2B] border border-gray-100 dark:border-gray-800 mb-2.5 flex items-center justify-center p-1.5">
+                    <div
+                      className="w-full h-full transform scale-90 pointer-events-none group-hover:scale-95 transition-transform"
+                      dangerouslySetInnerHTML={{ __html: preset.svg }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="text-[10px] font-bold text-[#00B8D9] uppercase tracking-wider truncate">
+                      {preset.category}
+                    </span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                      isPortrait
+                        ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300'
+                        : 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                    }`}>
+                      {isPortrait ? (language === 'ar' ? 'عمودية ↕' : 'Portrait ↕') : (language === 'ar' ? 'أفقية ↔' : 'Landscape ↔')}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-xs text-[#102A43] dark:text-white truncate">{preset.name}</h3>
                 </div>
-                <div className="text-[10px] font-bold text-[#00B8D9] uppercase tracking-wider">
-                  {preset.category}
-                </div>
-                <h3 className="font-bold text-xs text-[#102A43] dark:text-white mt-0.5 truncate">{preset.name}</h3>
-              </div>
 
-              <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-gray-400 dark:text-gray-500 capitalize">
-                  {preset.orientation}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => startBatchWithPreset(preset.id)}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg text-white shadow-sm hover:opacity-90 flex items-center gap-1"
-                  style={{ background: '#00B8D9' }}
-                >
-                  <span>{t('useTemplateBtn')}</span> <NextIcon size={11} />
-                </button>
+                <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-gray-400 dark:text-gray-500">
+                    {preset.defaultFont}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => startBatchWithPreset(preset.id)}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg text-white shadow-sm hover:opacity-90 flex items-center gap-1"
+                    style={{ background: '#00B8D9' }}
+                  >
+                    <span>{t('useTemplateBtn')}</span> <NextIcon size={11} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
