@@ -41,6 +41,9 @@ export interface Participant {
   name: string;
   isDuplicate?: boolean;
   selected: boolean;
+  fontFamily?: FontFamily;
+  fontSize?: number;
+  color?: string;
 }
 
 export interface CertificateResult {

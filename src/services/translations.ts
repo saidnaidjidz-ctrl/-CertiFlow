@@ -115,6 +115,11 @@ export const translations = {
     resetPosBtn: 'إعادة ضبط الموضع',
     saveTemplateBtn: 'حفظ واستمرار للمشاركين',
     interactiveStudioNote: 'اسحب المربع الأزرق لتغيير موضع الاسم، واسحب مقبض التمديد لتحديد حدود الاسم.',
+    typographyScopeSingle: 'هذا المشارك فقط',
+    typographyScopeAll: 'جميع المشاركين',
+    customizedBadge: 'تنسيق مخصص',
+    applyToAllParticipantsBtn: 'تطبيق هذا الخط على كل المشاركين',
+    resetToTemplateDefaultBtn: 'استعادة خط القالب الافتراضي',
 
     // Step 2: NamesStep
     importParticipantsTitle: 'استيراد المشاركين',
@@ -344,6 +349,11 @@ export const translations = {
     resetPosBtn: 'Reset Position',
     saveTemplateBtn: 'Confirm & Proceed to Participants',
     interactiveStudioNote: 'Drag the blue box to position participant names. Drag the right handle to adjust boundary width.',
+    typographyScopeSingle: 'This participant only',
+    typographyScopeAll: 'All participants',
+    customizedBadge: 'Custom style',
+    applyToAllParticipantsBtn: 'Apply style to all participants',
+    resetToTemplateDefaultBtn: 'Reset to default style',
 
     // Step 2: NamesStep
     importParticipantsTitle: 'Import Participants',

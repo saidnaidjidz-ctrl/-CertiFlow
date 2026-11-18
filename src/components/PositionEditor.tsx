@@ -1,17 +1,19 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import type { TemplateConfig, NamePosition } from '../types';
+import type { TemplateConfig, NamePosition, TextStyle } from '../types';
 import { ZoomIn, ZoomOut, RotateCcw, Move, Maximize2, Sparkles } from 'lucide-react';
 
 interface Props {
   template: TemplateConfig;
   onPositionChange: (pos: NamePosition) => void;
   sampleName?: string;
+  customStyle?: Partial<TextStyle>;
 }
 
 export default function PositionEditor({
   template,
   onPositionChange,
   sampleName = 'Dr. Alexander Wright',
+  customStyle,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -168,8 +170,13 @@ export default function PositionEditor({
   const boxTop = (pos.y / 100) * BASE_HEIGHT;
   const boxWidth = (pos.width / 100) * BASE_WIDTH;
 
+  const effectiveStyle = {
+    ...template.textStyle,
+    ...customStyle,
+  };
+
   // Dynamic font sizing calibrated to preview scale
-  const fontPt = template.textStyle.fontSize;
+  const fontPt = effectiveStyle.fontSize;
   const previewFontSize = Math.max(9, Math.min(48, (fontPt / 841.89) * BASE_WIDTH * 1.3));
 
   function getFontFamilyClass(family: string) {
@@ -310,16 +317,16 @@ export default function PositionEditor({
             {/* Real-time styled text */}
             <span
               className={`absolute inset-0 flex items-center px-2 overflow-hidden pointer-events-none leading-none ${getFontFamilyClass(
-                template.textStyle.fontFamily
+                effectiveStyle.fontFamily
               )}`}
               style={{
                 fontSize: previewFontSize * zoomLevel,
-                color: template.textStyle.color,
-                fontWeight: template.textStyle.fontFamily === 'Cinzel' ? 700 : 600,
+                color: effectiveStyle.color,
+                fontWeight: effectiveStyle.fontFamily === 'Cinzel' ? 700 : 600,
                 justifyContent:
-                  template.textStyle.align === 'center'
+                  effectiveStyle.align === 'center'
                     ? 'center'
-                    : template.textStyle.align === 'right'
+                    : effectiveStyle.align === 'right'
                     ? 'flex-end'
                     : 'flex-start',
                 whiteSpace: 'nowrap',

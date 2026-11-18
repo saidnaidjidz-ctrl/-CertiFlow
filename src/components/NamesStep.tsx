@@ -573,6 +573,11 @@ export default function NamesStep() {
                       <span className="text-xs font-semibold text-[#102A43] dark:text-white truncate" dir="auto">
                         {p.name}
                       </span>
+                      {(p.fontSize || p.fontFamily) && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950/40 text-[#00B8D9] border border-cyan-100 dark:border-cyan-800 flex-shrink-0">
+                          {p.fontFamily || ''} {p.fontSize ? `${p.fontSize}pt` : ''}
+                        </span>
+                      )}
                       {p.isDuplicate && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 flex-shrink-0">
                           {t('duplicateBadge')}

@@ -76,8 +76,52 @@ export async function rasterizeToPngBytes(
 }
 
 /**
+ * Pre-computed background structure to avoid re-rendering or re-parsing the background
+ * for each certificate in a batch.
+ */
+export interface PreparedBackground {
+  type: 'pdf' | 'png' | 'jpg' | 'none';
+  pdfBytes?: Uint8Array;
+  imageBytes?: Uint8Array;
+  isPng?: boolean;
+}
+
+/**
+ * Prepares the template background once before generating certificates.
+ */
+export async function prepareTemplateBackground(
+  config: TemplateConfig,
+  width: number,
+  height: number
+): Promise<PreparedBackground> {
+  if (!config.templateImageData) {
+    return { type: 'none' };
+  }
+
+  const dataUrl = config.templateImageData;
+
+  if (config.templateFileType === 'pdf') {
+    const base64 = dataUrl.split(',')[1];
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    return { type: 'pdf', pdfBytes: bytes };
+  }
+
+  if (dataUrl.startsWith('data:image/svg+xml')) {
+    // Rasterize SVG preset to PNG bytes ONCE
+    const pngBytes = await rasterizeToPngBytes(dataUrl, width, height);
+    return { type: 'png', imageBytes: pngBytes, isPng: true };
+  }
+
+  // PNG or JPG file
+  const isPng = dataUrl.startsWith('data:image/png');
+  const base64 = dataUrl.split(',')[1];
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  return { type: isPng ? 'png' : 'jpg', imageBytes: bytes, isPng };
+}
+
+/**
  * Renders text to an off-screen canvas and returns PNG bytes.
- * This guarantees proper shaping, custom web fonts, and RTL support.
+ * Guarantees proper font rendering, Arabic glyph shaping, and RTL support.
  */
 async function renderTextToImageBytes(
   text: string,
@@ -186,19 +230,52 @@ async function loadPdfStandardFont(pdfDoc: PDFDocument, family: string): Promise
   }
 }
 
+/**
+ * Generates a single certificate PDF.
+ * Accepts either a Participant object (with potential per-participant font/size overrides) or a plain name string.
+ */
 export async function generateSingleCertificate(
   config: TemplateConfig,
-  participantName: string
+  participant: Participant | string,
+  preparedBg?: PreparedBackground
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const { width, height } = getPageDimensions(config);
   const page = pdfDoc.addPage([width, height]);
 
-  // Embed template background if present
-  if (config.templateImageData) {
+  const participantName = typeof participant === 'string' ? participant : participant.name;
+  const effectiveStyle: TextStyle = {
+    ...config.textStyle,
+    ...(typeof participant === 'object' && participant.fontFamily ? { fontFamily: participant.fontFamily } : {}),
+    ...(typeof participant === 'object' && participant.fontSize ? { fontSize: participant.fontSize } : {}),
+    ...(typeof participant === 'object' && participant.color ? { color: participant.color } : {}),
+  };
+
+  // Embed template background
+  if (preparedBg && preparedBg.type !== 'none') {
+    try {
+      if (preparedBg.type === 'pdf' && preparedBg.pdfBytes) {
+        const templatePdf = await PDFDocument.load(preparedBg.pdfBytes);
+        const [templatePage] = await pdfDoc.copyPages(templatePdf, [0]);
+        pdfDoc.removePage(0);
+        pdfDoc.addPage(templatePage);
+        const newPage = pdfDoc.getPage(0);
+        const { width: actualW, height: actualH } = newPage.getSize();
+        await drawNameOnPage(pdfDoc, newPage, participantName, config, actualW, actualH, effectiveStyle);
+        return pdfDoc.save();
+      } else if (preparedBg.imageBytes) {
+        const img = preparedBg.isPng
+          ? await pdfDoc.embedPng(preparedBg.imageBytes)
+          : await pdfDoc.embedJpg(preparedBg.imageBytes);
+        page.drawImage(img, { x: 0, y: 0, width, height });
+      }
+    } catch (err) {
+      console.warn('Template embed fallback:', err);
+    }
+  } else if (config.templateImageData) {
+    // Fallback if preparedBg wasn't provided
     try {
       const dataUrl = config.templateImageData;
-
       if (config.templateFileType === 'pdf') {
         const base64 = dataUrl.split(',')[1];
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -207,17 +284,14 @@ export async function generateSingleCertificate(
         pdfDoc.removePage(0);
         pdfDoc.addPage(templatePage);
         const newPage = pdfDoc.getPage(0);
-        // Use actual page dimensions from the imported PDF page
         const { width: actualW, height: actualH } = newPage.getSize();
-        await drawNameOnPage(pdfDoc, newPage, participantName, config, actualW, actualH);
+        await drawNameOnPage(pdfDoc, newPage, participantName, config, actualW, actualH, effectiveStyle);
         return pdfDoc.save();
       } else if (dataUrl.startsWith('data:image/svg+xml')) {
-        // Rasterize SVG preset to high-res PNG
         const pngBytes = await rasterizeToPngBytes(dataUrl, width, height);
         const img = await pdfDoc.embedPng(pngBytes);
         page.drawImage(img, { x: 0, y: 0, width, height });
       } else {
-        // PNG or JPG file
         const base64 = dataUrl.split(',')[1];
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         let img;
@@ -233,36 +307,56 @@ export async function generateSingleCertificate(
     }
   }
 
-  await drawNameOnPage(pdfDoc, page, participantName, config, width, height);
+  await drawNameOnPage(pdfDoc, page, participantName, config, width, height, effectiveStyle);
   return pdfDoc.save();
 }
 
+/**
+ * Draws the participant name on the PDF page with exact vertical and horizontal alignment
+ * matching the Interactive Studio Preview in PositionEditor.
+ */
 async function drawNameOnPage(
   pdfDoc: PDFDocument,
   page: PDFPage,
   name: string,
   config: TemplateConfig,
   pageWidth: number,
-  pageHeight: number
+  pageHeight: number,
+  effectiveStyle: TextStyle
 ): Promise<void> {
-  const { namePosition, textStyle } = config;
+  const { namePosition } = config;
 
   const xPct = namePosition.x / 100;
   const yPct = namePosition.y / 100;
   const wPct = namePosition.width / 100;
 
   const textBoxLeft = xPct * pageWidth;
-  const textBoxTop = (1 - yPct) * pageHeight;
   const textBoxWidth = wPct * pageWidth;
 
-  // Use image method for custom web fonts (Cinzel, Playfair, Inter, Amiri, Cairo) and RTL/shaping for 100% fidelity
-  const isCustomWebFont = ['Cinzel', 'Playfair', 'Inter', 'SpaceMono', 'Amiri', 'Cairo'].includes(textStyle.fontFamily);
-  const useImageMethod = isCustomWebFont || hasRTL(name) || textStyle.autoShrink;
+  // Calibrate vertical position to match PositionEditor preview down to the pixel:
+  // In PositionEditor: BASE_WIDTH = 580, ratio = pageWidth / pageHeight, BASE_HEIGHT = Math.round(580 / ratio)
+  // previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / 841.89) * 580 * 1.3))
+  // boxHeight = Math.max(30, previewFontSize * 1.8)
+  // Text is centered vertically inside the box in preview:
+  const previewRatio = pageWidth / pageHeight;
+  const baseHeight = Math.round(580 / previewRatio);
+  const previewFontSize = Math.max(9, Math.min(48, (effectiveStyle.fontSize / 841.89) * 580 * 1.3));
+  const previewBoxHeight = Math.max(30, previewFontSize * 1.8);
+  const boxHeightFraction = previewBoxHeight / baseHeight;
+
+  // Exact vertical center from top (0 = top, 1 = bottom):
+  const centerYFraction = yPct + boxHeightFraction / 2;
+  // Center in PDF coordinates (0 = bottom, pageHeight = top):
+  const centerPDF_Y = pageHeight * (1 - centerYFraction);
+
+  // Use image method for custom web fonts (Cinzel, Playfair, Inter, Amiri, Cairo) and RTL/shaping
+  const isCustomWebFont = ['Cinzel', 'Playfair', 'Inter', 'SpaceMono', 'Amiri', 'Cairo'].includes(effectiveStyle.fontFamily);
+  const useImageMethod = isCustomWebFont || hasRTL(name) || effectiveStyle.autoShrink;
 
   if (useImageMethod) {
     const { bytes, width: imgW, height: imgH } = await renderTextToImageBytes(
       name,
-      textStyle,
+      effectiveStyle,
       textBoxWidth * 1.5,
     );
 
@@ -272,26 +366,28 @@ async function drawNameOnPage(
     try {
       img = await pdfDoc.embedPng(bytes);
     } catch {
-      await drawStandardPdfText(page, pdfDoc, name, config, pageWidth, pageHeight);
+      await drawStandardPdfText(page, pdfDoc, name, config, pageWidth, pageHeight, effectiveStyle, centerPDF_Y);
       return;
     }
 
-    // Determine scale: scale image to fit text bounding box if necessary
+    // Scale image to fit text bounding box if necessary
     const scale = Math.min(1.0, textBoxWidth / imgW);
     const drawW = imgW * scale;
     const drawH = imgH * scale;
 
     let drawX = textBoxLeft;
-    if (textStyle.align === 'center') {
+    if (effectiveStyle.align === 'center') {
       drawX = textBoxLeft + (textBoxWidth - drawW) / 2;
-    } else if (textStyle.align === 'right') {
+    } else if (effectiveStyle.align === 'right') {
       drawX = textBoxLeft + textBoxWidth - drawW;
     }
 
-    const drawY = textBoxTop - drawH / 2;
+    // In pdf-lib, drawImage 'y' is the bottom edge of the image.
+    // Setting drawY = centerPDF_Y - drawH / 2 perfectly centers the text at centerPDF_Y!
+    const drawY = centerPDF_Y - drawH / 2;
     page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
   } else {
-    await drawStandardPdfText(page, pdfDoc, name, config, pageWidth, pageHeight);
+    await drawStandardPdfText(page, pdfDoc, name, config, pageWidth, pageHeight, effectiveStyle, centerPDF_Y);
   }
 }
 
@@ -301,24 +397,24 @@ async function drawStandardPdfText(
   name: string,
   config: TemplateConfig,
   pageWidth: number,
-  pageHeight: number
+  _pageHeight: number,
+  effectiveStyle: TextStyle,
+  centerPDF_Y: number
 ): Promise<void> {
-  const { namePosition, textStyle } = config;
-  const font = await loadPdfStandardFont(pdfDoc, textStyle.fontFamily);
+  const { namePosition } = config;
+  const font = await loadPdfStandardFont(pdfDoc, effectiveStyle.fontFamily);
 
   const xPct = namePosition.x / 100;
-  const yPct = namePosition.y / 100;
   const wPct = namePosition.width / 100;
 
   const textBoxLeft = xPct * pageWidth;
-  const textBoxTop = (1 - yPct) * pageHeight;
   const textBoxWidth = wPct * pageWidth;
 
-  let fontSize = textStyle.fontSize;
+  let fontSize = effectiveStyle.fontSize;
 
-  if (textStyle.autoShrink) {
+  if (effectiveStyle.autoShrink) {
     let textWidth = font.widthOfTextAtSize(name, fontSize);
-    while (textWidth > textBoxWidth && fontSize > textStyle.minFontSize) {
+    while (textWidth > textBoxWidth && fontSize > effectiveStyle.minFontSize) {
       fontSize -= 1;
       textWidth = font.widthOfTextAtSize(name, fontSize);
     }
@@ -326,56 +422,79 @@ async function drawStandardPdfText(
 
   const textWidth = font.widthOfTextAtSize(name, fontSize);
   let x = textBoxLeft;
-  if (textStyle.align === 'center') {
+  if (effectiveStyle.align === 'center') {
     x = textBoxLeft + (textBoxWidth - textWidth) / 2;
-  } else if (textStyle.align === 'right') {
+  } else if (effectiveStyle.align === 'right') {
     x = textBoxLeft + textBoxWidth - textWidth;
   }
 
-  const { r, g, b } = hexToRgb(textStyle.color);
+  const { r, g, b } = hexToRgb(effectiveStyle.color);
+
+  // Standard font baseline is roughly 0.35 * fontSize below the center
+  const baselineY = centerPDF_Y - fontSize * 0.35;
 
   page.drawText(name, {
     x,
-    y: textBoxTop - fontSize / 2,
+    y: baselineY,
     size: fontSize,
     font,
     color: rgb(r, g, b),
   });
 }
 
+/**
+ * Ultra-fast bulk certificate generator.
+ * Pre-computes the background graphic once and runs generation with concurrent workers.
+ */
 export async function generateAllCertificates(
   config: TemplateConfig,
   participants: Participant[],
   onProgress: (result: CertificateResult) => void
 ): Promise<CertificateResult[]> {
-  const results: CertificateResult[] = [];
+  const selectedParticipants = participants.filter(p => p.selected);
   const usedNames = new Set<string>();
 
-  for (const participant of participants) {
-    if (!participant.selected) continue;
+  const { width, height } = getPageDimensions(config);
+  // Pre-prepare background once for ultra-fast generation
+  const preparedBg = await prepareTemplateBackground(config, width, height);
 
-    const result: CertificateResult = {
+  const tasks: { participant: Participant; result: CertificateResult }[] = selectedParticipants.map(participant => ({
+    participant,
+    result: {
       participantId: participant.id,
       name: participant.name,
       fileName: makeUniqueFilename(participant.name, usedNames),
-      status: 'generating',
-    };
-    onProgress(result);
+      status: 'pending' as const,
+    },
+  }));
 
-    try {
-      const pdfBytes = await generateSingleCertificate(config, participant.name);
-      result.pdfBytes = pdfBytes;
-      result.status = 'done';
-    } catch (err) {
-      result.error = err instanceof Error ? err.message : 'Unknown generation error';
-      result.status = 'error';
+  // Run with concurrency pool of 4 workers
+  const CONCURRENCY = 4;
+  let taskIndex = 0;
+
+  async function worker() {
+    while (taskIndex < tasks.length) {
+      const currentTask = tasks[taskIndex++];
+      currentTask.result.status = 'generating';
+      onProgress({ ...currentTask.result });
+
+      try {
+        const pdfBytes = await generateSingleCertificate(config, currentTask.participant, preparedBg);
+        currentTask.result.pdfBytes = pdfBytes;
+        currentTask.result.status = 'done';
+      } catch (err) {
+        currentTask.result.error = err instanceof Error ? err.message : 'Unknown generation error';
+        currentTask.result.status = 'error';
+      }
+
+      onProgress({ ...currentTask.result });
     }
-
-    results.push({ ...result });
-    onProgress({ ...result });
   }
 
-  return results;
+  const workers = Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, () => worker());
+  await Promise.all(workers);
+
+  return tasks.map(t => t.result);
 }
 
 export async function buildZip(results: CertificateResult[]): Promise<Blob> {

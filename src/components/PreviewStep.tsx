@@ -11,13 +11,24 @@ import {
   ArrowRight,
   CheckCircle2,
   Maximize2,
-  Sliders
+  Sliders,
+  RotateCcw,
+  CopyCheck
 } from 'lucide-react';
 import PositionEditor from './PositionEditor';
 import type { FontFamily } from '../types';
 
 export default function PreviewStep() {
-  const { currentTemplate, setCurrentTemplate, participants, setWizardStep, language, t } = useApp();
+  const {
+    currentTemplate,
+    setCurrentTemplate,
+    participants,
+    setParticipants,
+    setWizardStep,
+    showToast,
+    language,
+    t,
+  } = useApp();
 
   const isRtl = language === 'ar';
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
@@ -25,6 +36,7 @@ export default function PreviewStep() {
 
   const selected = participants.filter(p => p.selected);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [typographyScope, setTypographyScope] = useState<'single' | 'all'>('single');
 
   const safeIndex = selected.length > 0 ? Math.min(currentIndex, selected.length - 1) : 0;
   const currentParticipant = selected[safeIndex];
@@ -73,10 +85,111 @@ export default function PreviewStep() {
     );
   }
 
+  // Active styles for current participant (or template default)
+  const currentParticipantHasCustom = Boolean(
+    currentParticipant &&
+    (currentParticipant.fontFamily !== undefined ||
+     currentParticipant.fontSize !== undefined ||
+     currentParticipant.color !== undefined)
+  );
+
+  const effectiveFontFamily: FontFamily =
+    (currentParticipant?.fontFamily) || currentTemplate.textStyle.fontFamily;
+
+  const effectiveFontSize: number =
+    (currentParticipant?.fontSize) || currentTemplate.textStyle.fontSize;
+
+  const effectiveColor: string =
+    (currentParticipant?.color) || currentTemplate.textStyle.color;
+
+  function handleFontFamilyChange(font: FontFamily) {
+    if (typographyScope === 'single' && currentParticipant) {
+      setParticipants(
+        participants.map(p => (p.id === currentParticipant.id ? { ...p, fontFamily: font } : p))
+      );
+    } else if (currentTemplate) {
+      setCurrentTemplate({
+        ...currentTemplate,
+        textStyle: { ...currentTemplate.textStyle, fontFamily: font },
+      });
+      // Also apply to all participants
+      setParticipants(
+        participants.map(p => ({ ...p, fontFamily: font }))
+      );
+    }
+  }
+
+  function handleFontSizeChange(size: number) {
+    if (typographyScope === 'single' && currentParticipant) {
+      setParticipants(
+        participants.map(p => (p.id === currentParticipant.id ? { ...p, fontSize: size } : p))
+      );
+    } else if (currentTemplate) {
+      setCurrentTemplate({
+        ...currentTemplate,
+        textStyle: { ...currentTemplate.textStyle, fontSize: size },
+      });
+      setParticipants(
+        participants.map(p => ({ ...p, fontSize: size }))
+      );
+    }
+  }
+
+  function handleColorChange(color: string) {
+    if (typographyScope === 'single' && currentParticipant) {
+      setParticipants(
+        participants.map(p => (p.id === currentParticipant.id ? { ...p, color } : p))
+      );
+    } else if (currentTemplate) {
+      setCurrentTemplate({
+        ...currentTemplate,
+        textStyle: { ...currentTemplate.textStyle, color },
+      });
+      setParticipants(
+        participants.map(p => ({ ...p, color }))
+      );
+    }
+  }
+
+  function handleApplyCurrentStyleToAll() {
+    if (!currentParticipant || !currentTemplate) return;
+    setCurrentTemplate({
+      ...currentTemplate,
+      textStyle: {
+        ...currentTemplate.textStyle,
+        fontFamily: effectiveFontFamily,
+        fontSize: effectiveFontSize,
+        color: effectiveColor,
+      },
+    });
+    setParticipants(
+      participants.map(p => ({
+        ...p,
+        fontFamily: effectiveFontFamily,
+        fontSize: effectiveFontSize,
+        color: effectiveColor,
+      }))
+    );
+    showToast(t('applyToAllParticipantsBtn'), 'success');
+  }
+
+  function handleResetParticipantStyle() {
+    if (!currentParticipant) return;
+    setParticipants(
+      participants.map(p =>
+        p.id === currentParticipant.id
+          ? { ...p, fontFamily: undefined, fontSize: undefined, color: undefined }
+          : p
+      )
+    );
+    showToast(t('resetToTemplateDefaultBtn'), 'info');
+  }
+
   // Validation checks
   const longNames = selected.filter(p => p.name.length > 28);
   const duplicateNames = selected.filter(p => p.isDuplicate);
   const rtlNames = selected.filter(p => /[\u0600-\u06FF]/.test(p.name));
+  const customParticipantsCount = selected.filter(p => p.fontFamily || p.fontSize || p.color).length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -88,9 +201,16 @@ export default function PreviewStep() {
             <span className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider">
               {t('participantSampleTitle')}
             </span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 text-[#00B8D9] font-mono">
-              {t('sampleCounter', { current: safeIndex + 1, total: selected.length })}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {currentParticipantHasCustom && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                  {t('customizedBadge')}
+                </span>
+              )}
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 text-[#00B8D9] font-mono">
+                {t('sampleCounter', { current: safeIndex + 1, total: selected.length })}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -108,11 +228,14 @@ export default function PreviewStep() {
               onChange={e => setCurrentIndex(Number(e.target.value))}
               className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-bold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9] truncate"
             >
-              {selected.map((p, idx) => (
-                <option key={p.id} value={idx}>
-                  #{idx + 1}: {p.name}
-                </option>
-              ))}
+              {selected.map((p, idx) => {
+                const isCustom = p.fontFamily || p.fontSize || p.color;
+                return (
+                  <option key={p.id} value={idx}>
+                    #{idx + 1}: {p.name} {isCustom ? `[${p.fontSize || currentTemplate.textStyle.fontSize}pt ★]` : ''}
+                  </option>
+                );
+              })}
             </select>
 
             <button
@@ -134,12 +257,71 @@ export default function PreviewStep() {
           </div>
         </div>
 
-        {/* ── Typography Quick Controls ── */}
+        {/* ── Typography Quick Controls (Per-Certificate or All) ── */}
         <div className="saas-card rounded-2xl p-5 border border-sky-100 dark:border-[#1B2C42] bg-white dark:bg-[#101B2B] space-y-4">
-          <span className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Sliders size={14} className="text-[#00B8D9]" />
-            {t('typographyTitle')}
-          </span>
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-[#1B2C42]">
+            <span className="text-xs font-bold text-[#102A43] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Sliders size={14} className="text-[#00B8D9]" />
+              {t('typographyTitle')}
+            </span>
+
+            {/* Scope Switcher: Current Participant vs All */}
+            <div className="flex bg-gray-100 dark:bg-[#162338] p-0.5 rounded-lg text-[11px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setTypographyScope('single')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  typographyScope === 'single'
+                    ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+                title={t('typographyScopeSingle')}
+              >
+                {t('typographyScopeSingle')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTypographyScope('all')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  typographyScope === 'all'
+                    ? 'bg-white dark:bg-[#1E304C] text-[#00B8D9] font-bold shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+                title={t('typographyScopeAll')}
+              >
+                {t('typographyScopeAll')}
+              </button>
+            </div>
+          </div>
+
+          {/* Current Participant Context Banner */}
+          {typographyScope === 'single' && (
+            <div className="p-2.5 rounded-xl bg-cyan-50/60 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-800 text-xs flex items-center justify-between">
+              <div className="min-w-0">
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 block">
+                  {language === 'ar' ? 'تعديل خط الشهادة لـ:' : 'Styling certificate for:'}
+                </span>
+                <span className="font-bold text-[#102A43] dark:text-white truncate block" dir="auto">
+                  {currentParticipant.name}
+                </span>
+              </div>
+              {currentParticipantHasCustom ? (
+                <button
+                  type="button"
+                  onClick={handleResetParticipantStyle}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-[#162338] border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors flex items-center gap-1 flex-shrink-0"
+                  title={t('resetToTemplateDefaultBtn')}
+                >
+                  <RotateCcw size={11} />
+                  <span>{t('resetToTemplateDefaultBtn')}</span>
+                </button>
+              ) : (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                  {language === 'ar' ? '(خط القالب الافتراضي)' : '(Template Default)'}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Font Family */}
           <div>
@@ -147,13 +329,8 @@ export default function PreviewStep() {
               {t('fontFamilyLabel')}
             </label>
             <select
-              value={currentTemplate.textStyle.fontFamily}
-              onChange={e =>
-                setCurrentTemplate({
-                  ...currentTemplate,
-                  textStyle: { ...currentTemplate.textStyle, fontFamily: e.target.value as FontFamily },
-                })
-              }
+              value={effectiveFontFamily}
+              onChange={e => handleFontFamilyChange(e.target.value as FontFamily)}
               className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#162338] rounded-xl px-3 py-2 text-xs font-semibold text-[#102A43] dark:text-white focus:outline-none focus:border-[#00B8D9]"
             >
               <option value="Amiri">Amiri (خط عربي كلاسيكي / Amiri Traditional)</option>
@@ -173,19 +350,14 @@ export default function PreviewStep() {
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
                 {t('fontSizeLabel')}
               </label>
-              <span className="text-xs font-bold text-[#00B8D9] font-mono">{currentTemplate.textStyle.fontSize} pt</span>
+              <span className="text-xs font-bold text-[#00B8D9] font-mono">{effectiveFontSize} pt</span>
             </div>
             <input
               type="range"
               min={14}
               max={90}
-              value={currentTemplate.textStyle.fontSize}
-              onChange={e =>
-                setCurrentTemplate({
-                  ...currentTemplate,
-                  textStyle: { ...currentTemplate.textStyle, fontSize: Number(e.target.value) },
-                })
-              }
+              value={effectiveFontSize}
+              onChange={e => handleFontSizeChange(Number(e.target.value))}
               className="w-full accent-[#00B8D9] cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
@@ -204,14 +376,9 @@ export default function PreviewStep() {
                 <button
                   key={color}
                   type="button"
-                  onClick={() =>
-                    setCurrentTemplate({
-                      ...currentTemplate,
-                      textStyle: { ...currentTemplate.textStyle, color },
-                    })
-                  }
+                  onClick={() => handleColorChange(color)}
                   className={`w-6 h-6 rounded-full border-2 transition-transform flex-shrink-0 ${
-                    currentTemplate.textStyle.color.toLowerCase() === color.toLowerCase()
+                    effectiveColor.toLowerCase() === color.toLowerCase()
                       ? 'ring-2 ring-[#00B8D9] scale-110'
                       : 'border-gray-200 dark:border-gray-700 hover:scale-105'
                   }`}
@@ -221,18 +388,27 @@ export default function PreviewStep() {
               ))}
               <input
                 type="color"
-                value={currentTemplate.textStyle.color}
-                onChange={e =>
-                  setCurrentTemplate({
-                    ...currentTemplate,
-                    textStyle: { ...currentTemplate.textStyle, color: e.target.value },
-                  })
-                }
-                className="w-7 h-7 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer ml-auto"
+                value={effectiveColor}
+                onChange={e => handleColorChange(e.target.value)}
+                className="w-7 h-7 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer ms-auto"
                 title="Custom color"
               />
             </div>
           </div>
+
+          {/* Action to replicate style across all participants */}
+          {typographyScope === 'single' && (
+            <div className="pt-2 border-t border-gray-100 dark:border-[#1B2C42]">
+              <button
+                type="button"
+                onClick={handleApplyCurrentStyleToAll}
+                className="w-full py-2 px-3 rounded-xl border border-dashed border-[#00B8D9] text-xs font-bold text-[#00B8D9] hover:bg-cyan-50 dark:hover:bg-cyan-950/30 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <CopyCheck size={14} />
+                <span>{t('applyToAllParticipantsBtn')}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Validation & Quality Checklist */}
@@ -260,7 +436,10 @@ export default function PreviewStep() {
               <CheckCircle2 size={15} className="text-[#35BFA3] mt-0.5 flex-shrink-0" />
               <div>
                 <span className="font-semibold text-[#102A43] dark:text-white">{t('valTypography')} </span>
-                <span className="text-gray-500 dark:text-gray-400">{currentTemplate.textStyle.fontFamily} at {currentTemplate.textStyle.fontSize}pt</span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  {currentTemplate.textStyle.fontFamily} at {currentTemplate.textStyle.fontSize}pt
+                  {customParticipantsCount > 0 && ` (${customParticipantsCount} ${language === 'ar' ? 'مخصصة' : 'custom'})`}
+                </span>
               </div>
             </div>
 
@@ -345,7 +524,7 @@ export default function PreviewStep() {
             </div>
           </div>
 
-          {/* Interactive Live Canvas for Sample Preview */}
+          {/* Interactive Live Canvas for Sample Preview with participant-specific styles */}
           <div className="flex-1 flex items-center justify-center p-2 min-h-[480px]">
             <PositionEditor
               template={currentTemplate}
@@ -358,6 +537,11 @@ export default function PreviewStep() {
                 }
               }}
               sampleName={currentParticipant.name}
+              customStyle={{
+                fontFamily: effectiveFontFamily,
+                fontSize: effectiveFontSize,
+                color: effectiveColor,
+              }}
             />
           </div>
         </div>
